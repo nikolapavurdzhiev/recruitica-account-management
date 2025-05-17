@@ -15,7 +15,9 @@ const formSchema = z.object({
   candidateName: z.string().min(2, {
     message: "Candidate name must be at least 2 characters."
   }),
-  keynotes: z.instanceof(File).optional(),
+  keynotes: z.instanceof(File, {
+    message: "Candidate keynotes file is required."
+  }),
   clientList: z.string({
     required_error: "Please select a client."
   })
@@ -55,9 +57,12 @@ const CandidateForm = () => {
       const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (validTypes.includes(file.type)) {
         setSelectedFile(file);
+        // Set the keynotes field value in the form
+        form.setValue("keynotes", file, { shouldValidate: true });
       } else {
         toast.error("Please upload a PDF or Word document");
         event.target.value = "";
+        form.setError("keynotes", { message: "Please upload a PDF or Word document" });
       }
     }
   };
@@ -119,26 +124,33 @@ const CandidateForm = () => {
             )}
           />
           
-          <div className="space-y-2">
-            <Label htmlFor="keynotes">Candidate Keynotes</Label>
-            <div className="flex items-center gap-2">
-              <Label 
-                htmlFor="keynotes"
-                className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium hover:bg-accent hover:text-accent-foreground"
-              >
-                <FileText className="h-4 w-4" />
-                {selectedFile ? selectedFile.name : "Upload PDF or Word"}
-              </Label>
-            </div>
-            <input
-              id="keynotes"
-              type="file"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              className="sr-only"
-              onChange={handleFileChange}
-            />
-            <p className="text-xs text-muted-foreground">Upload a PDF or Word document</p>
-          </div>
+          <FormField
+            control={form.control}
+            name="keynotes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Candidate Keynotes *</FormLabel>
+                <div className="flex items-center gap-2">
+                  <Label 
+                    htmlFor="keynotes"
+                    className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {selectedFile ? selectedFile.name : "Upload PDF or Word"}
+                  </Label>
+                </div>
+                <input
+                  id="keynotes"
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="sr-only"
+                  onChange={handleFileChange}
+                />
+                <FormDescription className="text-xs text-muted-foreground">Upload a PDF or Word document</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
           <FormField
             control={form.control}
