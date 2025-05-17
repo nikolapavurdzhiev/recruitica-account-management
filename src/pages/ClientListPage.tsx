@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ClientTable from "@/components/ClientTable";
 import CreateClientListForm from "@/components/CreateClientListForm";
 import { toast } from "sonner";
-import { FileText, MessageSquare } from "lucide-react";
 
 const ClientListPage = () => {
   const { user } = useAuth();
@@ -19,21 +18,12 @@ const ClientListPage = () => {
   const [selectedListId, setSelectedListId] = useState<string | null>(id || null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [candidates, setCandidates] = useState<any[]>([]);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
-  const [loadingCandidates, setLoadingCandidates] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchClientLists();
     }
   }, [user]);
-
-  useEffect(() => {
-    if (selectedListId) {
-      fetchCandidatesForList(selectedListId);
-    }
-  }, [selectedListId]);
 
   const fetchClientLists = async () => {
     setLoading(true);
@@ -59,32 +49,6 @@ const ClientListPage = () => {
     }
   };
 
-  const fetchCandidatesForList = async (listId: string) => {
-    setLoadingCandidates(true);
-    try {
-      const { data, error } = await supabase
-        .from('candidates')
-        .select('*')
-        .eq('client_list_id', listId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setCandidates(data || []);
-      
-      // Select the first candidate by default
-      if (data && data.length > 0) {
-        setSelectedCandidateId(data[0].id);
-      } else {
-        setSelectedCandidateId(null);
-      }
-      
-      setLoadingCandidates(false);
-    } catch (error: any) {
-      console.error("Error loading candidates:", error);
-      setLoadingCandidates(false);
-    }
-  };
-
   const handleListChange = (listId: string) => {
     setSelectedListId(listId);
     navigate(`/client-lists/${listId}`);
@@ -96,18 +60,6 @@ const ClientListPage = () => {
     setShowCreateForm(false);
     navigate(`/client-lists/${newList.id}`);
     toast.success("Client list created successfully!");
-  };
-
-  const handleCandidateChange = (candidateId: string) => {
-    setSelectedCandidateId(candidateId);
-  };
-
-  const handleGenerateEmail = () => {
-    if (!selectedCandidateId) {
-      toast.error("Please select a candidate first");
-      return;
-    }
-    navigate(`/candidate-intro/${selectedCandidateId}`);
   };
 
   if (!user) {
@@ -143,9 +95,8 @@ const ClientListPage = () => {
           ) : (
             <>
               {clientLists.length > 0 && (
-                <div className="flex flex-col md:flex-row md:items-end gap-4">
-                  <div className="w-full md:w-1/3">
-                    <label className="text-sm font-medium mb-1 block">Select Client List</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-full max-w-xs">
                     <Select value={selectedListId || ""} onValueChange={handleListChange}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a client list" />
@@ -158,39 +109,6 @@ const ClientListPage = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  
-                  {candidates.length > 0 && (
-                    <div className="w-full md:w-1/3">
-                      <label className="text-sm font-medium mb-1 block">Select Candidate</label>
-                      <Select 
-                        value={selectedCandidateId || ""} 
-                        onValueChange={handleCandidateChange}
-                        disabled={loadingCandidates}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder={loadingCandidates ? "Loading candidates..." : "Select a candidate"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {candidates.map((candidate) => (
-                            <SelectItem key={candidate.id} value={candidate.id}>
-                              {candidate.candidate_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <Button 
-                      onClick={handleGenerateEmail} 
-                      disabled={!selectedCandidateId}
-                      className="md:ml-2"
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Generate Email Template
-                    </Button>
                   </div>
                 </div>
               )}

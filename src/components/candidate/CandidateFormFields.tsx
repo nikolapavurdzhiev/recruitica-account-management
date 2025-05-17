@@ -19,8 +19,8 @@ const formSchema = z.object({
   keynotes: z.instanceof(File, {
     message: "Candidate keynotes file is required."
   }),
-  clientList: z.string().uuid({
-    message: "Please select a client list."
+  clientList: z.string({
+    required_error: "Please select a client list."
   })
 });
 
@@ -70,19 +70,9 @@ const CandidateFormFields = ({
     }
   };
 
-  const handleFormSubmit = (data: CandidateFormValues) => {
-    // Ensure clientList is not empty
-    if (!data.clientList || data.clientList.trim() === "") {
-      form.setError("clientList", { message: "Please select a client list" });
-      return;
-    }
-    
-    onSubmit(data);
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="candidateName"
@@ -131,11 +121,7 @@ const CandidateFormFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Client List *</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value || undefined} 
-                required
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder={loadingLists ? "Loading client lists..." : "Select a client list"} />
