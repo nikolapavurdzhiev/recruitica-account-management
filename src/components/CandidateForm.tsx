@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { FileText } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Navigate } from "react-router-dom";
 
 const formSchema = z.object({
   candidateName: z.string().min(2, {
@@ -26,8 +28,15 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const CandidateForm = () => {
+  const { user } = useAuth();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect to auth page if user is not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -37,16 +46,60 @@ const CandidateForm = () => {
     }
   });
 
-  const onSubmit = (data: FormValues) => {
-    // Handle file separately since it's not directly handled by react-hook-form
-    const formData = {
-      ...data,
-      keynotes: selectedFile
-    };
+  const onSubmit = async (data: FormValues) => {
+    if (!user) {
+      toast.error("You must be logged in to submit a candidate");
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    console.log("Form submitted:", formData);
-    toast.success("Form submitted successfully!");
-    setIsSubmitted(true);
+    try {
+      // Upload file to Supabase storage
+      let keynotes_url = null;
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+        
+        // Create a storage bucket first (this is handled in the backend by default)
+        const { error: uploadError } = await supabase.storage
+          .from('candidate-documents')
+          .upload(filePath, selectedFile);
+        
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        // Get the URL for the uploaded file
+        const { data: urlData } = supabase.storage
+          .from('candidate-documents')
+          .getPublicUrl(filePath);
+          
+        keynotes_url = urlData.publicUrl;
+      }
+      
+      // Insert the candidate record linked to the current user
+      const { error } = await supabase
+        .from('candidates')
+        .insert({
+          user_id: user.id,
+          candidate_name: data.candidateName,
+          keynotes_url,
+          client_list: data.clientList,
+        });
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Candidate submitted successfully!");
+      setIsSubmitted(true);
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred while submitting the candidate");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,7 +227,9 @@ const CandidateForm = () => {
             )}
           />
           
-          <Button type="submit" className="w-full">Submit Candidate</Button>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Candidate"}
+          </Button>
         </form>
       </Form>
     </div>

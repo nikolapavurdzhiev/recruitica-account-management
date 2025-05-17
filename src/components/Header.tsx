@@ -1,20 +1,38 @@
 
 import React from "react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface HeaderProps {
-  className?: string;
-}
+const Header = () => {
+  const { user, signOut } = useAuth();
 
-const Header: React.FC<HeaderProps> = ({ className }) => {
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
-    <header className={cn("w-full py-6 border-b", className)}>
-      <div className="container flex items-center">
-        <img 
-          src="/lovable-uploads/eaac4d0b-430c-48bc-873b-41f29060675d.png" 
-          alt="Recruitica Logo" 
-          className="h-10 sm:h-12" 
-        />
+    <header className="bg-background border-b">
+      <div className="container flex h-14 items-center justify-between">
+        <Link to="/" className="font-semibold text-lg text-primary">
+          Recruitica
+        </Link>
+        <div>
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                {user.email}
+              </span>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/auth">Sign In</Link>
+            </Button>
+          )}
+        </div>
       </div>
     </header>
   );
