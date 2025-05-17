@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           candidate_name: string
           client_list: string
+          client_list_id: string | null
           created_at: string
           id: string
           keynotes_url: string | null
@@ -21,6 +22,7 @@ export type Database = {
         Insert: {
           candidate_name: string
           client_list: string
+          client_list_id?: string | null
           created_at?: string
           id?: string
           keynotes_url?: string | null
@@ -29,9 +31,114 @@ export type Database = {
         Update: {
           candidate_name?: string
           client_list?: string
+          client_list_id?: string | null
           created_at?: string
           id?: string
           keynotes_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_client_list_id_fkey"
+            columns: ["client_list_id"]
+            isOneToOne: false
+            referencedRelation: "client_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_list_entries: {
+        Row: {
+          client_id: string
+          client_list_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          client_id: string
+          client_list_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          client_id?: string
+          client_list_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_list_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_list_entries_client_list_id_fkey"
+            columns: ["client_list_id"]
+            isOneToOne: false
+            referencedRelation: "client_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          company_name: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

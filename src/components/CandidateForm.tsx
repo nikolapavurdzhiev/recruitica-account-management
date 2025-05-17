@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   candidateName: z.string().min(2, {
@@ -22,7 +22,7 @@ const formSchema = z.object({
     message: "Candidate keynotes file is required."
   }),
   clientList: z.string({
-    required_error: "Please select a client."
+    required_error: "Please select a client list."
   })
 });
 
@@ -30,14 +30,44 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CandidateForm = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clientLists, setClientLists] = useState<any[]>([]);
+  const [hasClientLists, setHasClientLists] = useState<boolean | null>(null);
+  const [loadingLists, setLoadingLists] = useState(true);
 
   // Redirect to auth page if user is not logged in
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+
+  // Fetch client lists when component mounts
+  useEffect(() => {
+    const fetchClientLists = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('client_lists')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        setClientLists(data || []);
+        setHasClientLists(data && data.length > 0);
+        setLoadingLists(false);
+      } catch (error: any) {
+        console.error('Error fetching client lists:', error);
+        toast.error(`Error loading client lists: ${error.message}`);
+        setLoadingLists(false);
+      }
+    };
+    
+    fetchClientLists();
+  }, [user]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -89,7 +119,8 @@ const CandidateForm = () => {
           user_id: user.id,
           candidate_name: data.candidateName,
           keynotes_url,
-          client_list: data.clientList,
+          client_list: data.clientList, // Keep for backwards compatibility
+          client_list_id: data.clientList, // New field with the UUID of the selected client list
         });
         
       if (error) {
@@ -98,6 +129,12 @@ const CandidateForm = () => {
       
       toast.success("Candidate submitted successfully!");
       setIsSubmitted(true);
+      
+      // Redirect to the client list page
+      setTimeout(() => {
+        navigate(`/client-lists/${data.clientList}`);
+      }, 1500);
+      
     } catch (error: any) {
       toast.error(error.message || "An error occurred while submitting the candidate");
     } finally {
@@ -123,6 +160,10 @@ const CandidateForm = () => {
     }
   };
 
+  const handleGoToCreateList = () => {
+    navigate('/client-lists');
+  };
+
   if (isSubmitted) {
     return (
       <div className="flex flex-col items-center justify-center space-y-4 p-6 text-center">
@@ -144,15 +185,23 @@ const CandidateForm = () => {
         </div>
         <h2 className="text-2xl font-bold text-primary">Congratulations!</h2>
         <p className="text-lg">You just submitted a candidate</p>
-        <Button 
-          onClick={() => {
-            form.reset();
-            setSelectedFile(null);
-            setIsSubmitted(false);
-          }}
-        >
-          Submit another candidate
-        </Button>
+        <p className="text-sm text-muted-foreground">Redirecting to client list...</p>
+      </div>
+    );
+  }
+
+  if (hasClientLists === false && !loadingLists) {
+    return (
+      <div className="w-full max-w-xl mx-auto p-6">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-primary">No Client Lists Found</h2>
+          <p className="text-muted-foreground">
+            You need at least one client list to submit a candidate.
+          </p>
+          <Button onClick={handleGoToCreateList}>
+            Create Your First Client List
+          </Button>
+        </div>
       </div>
     );
   }
@@ -217,20 +266,38 @@ const CandidateForm = () => {
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a client" />
+                      <SelectValue placeholder={loadingLists ? "Loading client lists..." : "Select a client list"} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="it-london">IT London</SelectItem>
-                    <SelectItem value="finance-london">Finance London</SelectItem>
+                    {clientLists.map(list => (
+                      <SelectItem key={list.id} value={list.id}>
+                        {list.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                <FormDescription className="text-xs">
+                  {hasClientLists ? (
+                    <span>Select which client list this candidate applies to</span>
+                  ) : (
+                    <span className="flex items-center">
+                      <Button 
+                        variant="link" 
+                        className="h-auto p-0 text-xs" 
+                        onClick={handleGoToCreateList}
+                      >
+                        Click here to create your first client list
+                      </Button>
+                    </span>
+                  )}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full" disabled={isSubmitting || loadingLists || hasClientLists === false}>
             {isSubmitting ? "Submitting..." : "Submit Candidate"}
           </Button>
         </form>
