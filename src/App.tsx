@@ -24,6 +24,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/client-lists" element={<ClientListPage />} />
             <Route path="/client-lists/:id" element={<ClientListPage />} />
+            <Route path="/candidate/submit" element={<Index />} /> {/* Redirect to Index page for now */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

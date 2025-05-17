@@ -10,7 +10,7 @@ import AddClientForm from "@/components/AddClientForm";
 
 interface ClientTableProps {
   clientListId: string;
-  onClientUpdate?: () => void;
+  onClientUpdate?: (activeClients: any[]) => void;
 }
 
 interface Client {
@@ -62,8 +62,16 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
         }));
         
         setClients(formattedClients);
+        
+        // Pass active clients to parent component
+        if (onClientUpdate) {
+          onClientUpdate(formattedClients.filter(client => client.is_active));
+        }
       } else {
         setClients([]);
+        if (onClientUpdate) {
+          onClientUpdate([]);
+        }
       }
     } catch (error: any) {
       toast.error(`Error loading clients: ${error.message}`);
@@ -83,11 +91,16 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
       if (error) throw error;
 
       // Update local state
-      setClients(
-        clients.map((client) =>
-          client.id === clientId ? { ...client, is_active: !currentValue } : client
-        )
+      const updatedClients = clients.map((client) =>
+        client.id === clientId ? { ...client, is_active: !currentValue } : client
       );
+      
+      setClients(updatedClients);
+      
+      // Pass updated active clients to parent
+      if (onClientUpdate) {
+        onClientUpdate(updatedClients.filter(client => client.is_active));
+      }
       
       toast.success(`Client ${!currentValue ? 'added to' : 'removed from'} list`);
     } catch (error: any) {
@@ -98,7 +111,6 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
   const handleAddClientSuccess = (newClientWithEntry: any) => {
     setShowAddForm(false);
     fetchClients();
-    if (onClientUpdate) onClientUpdate();
   };
 
   return (
