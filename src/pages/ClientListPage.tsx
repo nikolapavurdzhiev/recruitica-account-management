@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ClientTable from "@/components/ClientTable";
 import CreateClientListForm from "@/components/CreateClientListForm";
 import { toast } from "sonner";
-import { AlertCircle, ArrowRight, FileText, Loader2 } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 
 const ClientListPage = () => {
   const { user } = useAuth();
@@ -22,9 +22,6 @@ const ClientListPage = () => {
   const [activeClients, setActiveClients] = useState<any[]>([]);
   const [latestCandidate, setLatestCandidate] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [extractingText, setExtractingText] = useState(false);
-  const [showExtractError, setShowExtractError] = useState(false);
-  const [extractError, setExtractError] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -93,30 +90,6 @@ const ClientListPage = () => {
     fetchClientLists();
   };
 
-  const extractDocumentText = async (fileUrl: string) => {
-    setExtractingText(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('extract-document-text', {
-        body: { fileUrl },
-      });
-
-      if (error) throw new Error(error.message);
-      
-      if (!data.success) {
-        throw new Error(data.error || "Failed to extract text from document");
-      }
-      
-      return data.text;
-    } catch (error: any) {
-      console.error("Error extracting document text:", error);
-      setExtractError(error.message || "Failed to extract document text");
-      setShowExtractError(true);
-      return null;
-    } finally {
-      setExtractingText(false);
-    }
-  };
-
   const handleContinueClick = async () => {
     if (!latestCandidate) {
       toast.error("No candidate data found. Please submit a candidate first.");
@@ -131,24 +104,10 @@ const ClientListPage = () => {
     setIsSubmitting(true);
     
     try {
-      // First, try to extract text from the document if URL exists
-      let keynotes_text = null;
-      if (latestCandidate.keynotes_url) {
-        toast.info(
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Extracting text from keynotes document...
-          </div>
-        );
-        
-        keynotes_text = await extractDocumentText(latestCandidate.keynotes_url);
-      }
-
-      // Prepare webhook data with extracted text if available
+      // Prepare webhook data
       const webhookData = {
         candidateName: latestCandidate.candidate_name,
         keynotesFile: latestCandidate.keynotes_url,
-        keynotesText: keynotes_text, // Add the extracted text to the payload
         contacts: activeClients.map(client => ({
           name: client.name,
           email: client.email,
@@ -156,7 +115,7 @@ const ClientListPage = () => {
         }))
       };
 
-      // Send the webhook with the updated data
+      // Send the webhook
       const response = await fetch(
         'https://nikolapavurdjiev.app.n8n.cloud/webhook-test/c1f76bc0-d38a-4b5f-aeae-87578650912b',
         {
@@ -253,19 +212,19 @@ const ClientListPage = () => {
         </div>
       </main>
 
-      {/* Fixed position continue button with loading state for text extraction */}
+      {/* Fixed position continue button with loading state */}
       {selectedListId && activeClients.length > 0 && latestCandidate && (
         <div className="fixed bottom-6 right-6">
           <Button 
             onClick={handleContinueClick}
-            disabled={isSubmitting || extractingText}
+            disabled={isSubmitting}
             size="lg"
             className="shadow-lg"
           >
-            {isSubmitting || extractingText ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {extractingText ? "Extracting Document Text..." : "Processing..."}
+                Processing...
               </>
             ) : (
               <>
@@ -276,24 +235,6 @@ const ClientListPage = () => {
           </Button>
         </div>
       )}
-
-      {/* Error dialog for text extraction failures */}
-      <AlertDialog open={showExtractError} onOpenChange={setShowExtractError}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Document Text Extraction Error</AlertDialogTitle>
-            <AlertDialogDescription>
-              We encountered an error while extracting text from the document. The webhook will still be sent with the document URL, but without extracted text.
-              <div className="mt-2 p-2 bg-muted rounded-md text-sm">
-                <p className="font-mono">{extractError}</p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction>Continue Anyway</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
