@@ -565,7 +565,7 @@ Only return the complete filled HTML, no explanations or other text.`
                             <div className="pl-4">
                               {Object.entries(value).map(([subKey, subValue]) => (
                                 <div key={subKey}>
-                                  <em className="capitalize">{subKey.replace(/_/g, ' ')}:</em> {subValue}
+                                  <em className="capitalize">{subKey.replace(/_/g, ' ')}:</em> {String(subValue)}
                                 </div>
                               ))}
                             </div>
@@ -574,7 +574,7 @@ Only return the complete filled HTML, no explanations or other text.`
                       }
                       return (
                         <div key={key} className="border-t pt-2">
-                          <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong> {value}
+                          <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong> {String(value)}
                         </div>
                       );
                     })}
