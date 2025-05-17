@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -60,10 +61,12 @@ const CandidateForm = () => {
       if (selectedFile) {
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        
+        // Structure the file path with user ID as prefix for RLS policies
         const filePath = `${user.id}/${fileName}`;
         
-        // Create a storage bucket first (this is handled in the backend by default)
-        const { error: uploadError } = await supabase.storage
+        // Upload to the candidate-documents bucket
+        const { error: uploadError, data: fileData } = await supabase.storage
           .from('candidate-documents')
           .upload(filePath, selectedFile);
         
