@@ -58,6 +58,19 @@ const CandidateForm = () => {
       return;
     }
 
+    // Validate client list is a valid UUID
+    if (!data.clientList || data.clientList.trim() === "") {
+      toast.error("Please select a client list");
+      return;
+    }
+    
+    // Check if clientList is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(data.clientList)) {
+      toast.error("Invalid client list selected");
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
