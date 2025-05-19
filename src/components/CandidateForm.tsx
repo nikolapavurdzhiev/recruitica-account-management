@@ -103,10 +103,8 @@ const CandidateForm = () => {
       toast.success("Candidate submitted successfully!");
       setIsSubmitted(true);
       
-      // Redirect to the client list page
-      setTimeout(() => {
-        navigate(`/client-lists/${data.clientList}`);
-      }, 1500);
+      // Navigate directly to the client list page without timeout
+      navigate(`/client-lists/${data.clientList}`);
       
     } catch (error: any) {
       toast.error(error.message || "An error occurred while submitting the candidate");

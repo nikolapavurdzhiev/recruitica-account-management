@@ -115,25 +115,52 @@ const ClientListPage = () => {
         }))
       };
 
-      // Send the webhook
+      console.log("Sending webhook data:", webhookData);
+      
+      // Send the webhook and wait for the response
       const response = await fetch(
         'https://nikolapavurdjiev.app.n8n.cloud/webhook-test/c1f76bc0-d38a-4b5f-aeae-87578650912b',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            // Add CORS headers if needed
+            'Accept': 'application/json'
           },
           body: JSON.stringify(webhookData),
         }
       );
 
+      console.log("Webhook response status:", response.status);
+      
       if (!response.ok) {
         throw new Error(`Webhook request failed with status ${response.status}`);
       }
+      
+      // Try to parse the response if there is one
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          responseData = await response.json();
+          console.log("Webhook response data:", responseData);
+        } catch (e) {
+          console.log("Could not parse JSON response:", e);
+        }
+      } else {
+        const textResponse = await response.text();
+        console.log("Webhook text response:", textResponse);
+      }
 
+      // Only show success and redirect after the webhook has fully processed
       toast.success("Workflow completed successfully!");
+      
+      // Navigate to candidate submit page after the successful webhook response
       navigate('/candidate/submit');
+      
     } catch (error: any) {
+      console.error("Webhook error:", error);
+      
       toast.error(
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -144,7 +171,6 @@ const ClientListPage = () => {
           <div className="text-sm">You can try again when ready.</div>
         </div>
       );
-      console.error("Webhook error:", error);
     } finally {
       setIsSubmitting(false);
     }
