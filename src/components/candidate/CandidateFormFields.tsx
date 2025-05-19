@@ -70,9 +70,18 @@ const CandidateFormFields = ({
     }
   };
 
+  // Wrap the onSubmit handler to prevent default form submission behavior
+  const handleSubmit = (e: React.FormEvent) => {
+    // Prevent the default form submission
+    form.handleSubmit((data) => {
+      // Call the provided onSubmit handler with the form data
+      onSubmit(data);
+    })(e);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <FormField
           control={form.control}
           name="candidateName"
@@ -143,7 +152,10 @@ const CandidateFormFields = ({
                     <Button 
                       variant="link" 
                       className="h-auto p-0 text-xs" 
-                      onClick={handleGoToCreateList}
+                      onClick={(e) => {
+                        e.preventDefault(); // Prevent form submission
+                        handleGoToCreateList();
+                      }}
                     >
                       Click here to create your first client list
                     </Button>

@@ -11,22 +11,20 @@ import NoClientListsWarning from "./candidate/NoClientListsWarning";
 const CandidateForm = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // Move all useState hooks to the top of the component
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientLists, setClientLists] = useState<any[]>([]);
   const [hasClientLists, setHasClientLists] = useState<boolean | null>(null);
   const [loadingLists, setLoadingLists] = useState(true);
-
-  // Redirect to auth page if user is not logged in
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  
   // Fetch client lists when component mounts
   useEffect(() => {
+    // Only fetch if we have a user
+    if (!user) return;
+    
     const fetchClientLists = async () => {
-      if (!user) return;
-      
       try {
         const { data, error } = await supabase
           .from('client_lists')
@@ -46,7 +44,7 @@ const CandidateForm = () => {
     };
     
     fetchClientLists();
-  }, [user]);
+  }, [user]); // Only re-run when user changes
 
   const handleGoToCreateList = () => {
     navigate('/client-lists');
@@ -116,6 +114,11 @@ const CandidateForm = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Move conditional rendering after all hooks are defined
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   if (isSubmitted) {
     return <SubmitSuccess />;
