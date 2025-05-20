@@ -11,7 +11,13 @@ export interface WebhookData {
   contacts: WebhookContact[];
 }
 
-export const sendWebhook = async (data: WebhookData): Promise<void> => {
+export interface WebhookResponse {
+  emailSubject: string;
+  emailBody: string;
+  clientList: WebhookContact[];
+}
+
+export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> => {
   console.log("Sending webhook data:", data);
   
   const response = await fetch(
@@ -32,20 +38,9 @@ export const sendWebhook = async (data: WebhookData): Promise<void> => {
     throw new Error(`Webhook request failed with status ${response.status}`);
   }
   
-  // Try to parse the response if there is one
-  let responseData;
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    try {
-      responseData = await response.json();
-      console.log("Webhook response data:", responseData);
-    } catch (e) {
-      console.log("Could not parse JSON response:", e);
-    }
-  } else {
-    const textResponse = await response.text();
-    console.log("Webhook text response:", textResponse);
-  }
+  // Parse the response JSON
+  const responseData = await response.json();
+  console.log("Webhook response data:", responseData);
   
-  return;
+  return responseData as WebhookResponse;
 };

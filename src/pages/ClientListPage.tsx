@@ -13,7 +13,10 @@ import ClientListSelector from "@/components/client-list/ClientListSelector";
 import ContinueButton from "@/components/client-list/ContinueButton";
 import { useClientLists } from "@/hooks/useClientLists";
 import { useLatestCandidate } from "@/hooks/useLatestCandidate";
-import { sendWebhook, WebhookData } from "@/services/webhookService";
+import { WebhookData } from "@/services/webhookService";
+import { useWebhookMutation } from "@/hooks/useWebhookMutation";
+import { useEmailResultDialog } from "@/hooks/useEmailResultDialog";
+import EmailResultDialog from "@/components/email-result/EmailResultDialog";
 
 const ClientListPage = () => {
   const { user } = useAuth();
@@ -21,11 +24,12 @@ const ClientListPage = () => {
   const { id } = useParams();
   const { clientLists, loading, fetchClientLists, setClientLists } = useClientLists(user?.id);
   const { latestCandidate } = useLatestCandidate(user?.id);
+  const webhookMutation = useWebhookMutation();
+  const { isDialogOpen, emailData, openDialog, closeDialog } = useEmailResultDialog();
   
   const [selectedListId, setSelectedListId] = useState<string | null>(id || null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeClients, setActiveClients] = useState<any[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // If we have lists but no selected list, select the first one
@@ -63,44 +67,43 @@ const ClientListPage = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    
-    try {
-      // Prepare webhook data
-      const webhookData: WebhookData = {
-        candidateName: latestCandidate.candidate_name,
-        keynotesFile: latestCandidate.keynotes_url,
-        contacts: activeClients.map(client => ({
-          name: client.name,
-          email: client.email,
-          company: client.company_name
-        }))
-      };
+    // Prepare webhook data
+    const webhookData: WebhookData = {
+      candidateName: latestCandidate.candidate_name,
+      keynotesFile: latestCandidate.keynotes_url,
+      contacts: activeClients.map(client => ({
+        name: client.name,
+        email: client.email,
+        company: client.company_name
+      }))
+    };
 
-      await sendWebhook(webhookData);
-      
-      // Only show success and redirect after the webhook has fully processed
-      toast.success("Workflow completed successfully!");
-      
-      // Navigate to candidate submit page after the successful webhook response
-      navigate('/candidate/submit');
-      
-    } catch (error: any) {
-      console.error("Webhook error:", error);
-      
-      toast.error(
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" /> 
-            Webhook request failed
+    // Use the webhook mutation to send data and get response
+    webhookMutation.mutate(webhookData, {
+      onSuccess: (data) => {
+        openDialog(data);
+      },
+      onError: (error: any) => {
+        console.error("Webhook error:", error);
+        
+        toast.error(
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" /> 
+              Webhook request failed
+            </div>
+            <div className="text-sm text-muted-foreground">{error.message}</div>
+            <div className="text-sm">You can try again when ready.</div>
           </div>
-          <div className="text-sm text-muted-foreground">{error.message}</div>
-          <div className="text-sm">You can try again when ready.</div>
-        </div>
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+        );
+      }
+    });
+  };
+
+  const handleDialogClose = () => {
+    closeDialog();
+    // Navigate to candidate submit page after the dialog is closed
+    navigate('/candidate/submit');
   };
 
   if (!user) {
@@ -147,10 +150,18 @@ const ClientListPage = () => {
       {/* Continue button with loading state */}
       {selectedListId && activeClients.length > 0 && latestCandidate && (
         <ContinueButton 
-          isSubmitting={isSubmitting}
+          isSubmitting={webhookMutation.isPending}
           onClick={handleContinueClick}
         />
       )}
+
+      {/* Email Result Dialog */}
+      <EmailResultDialog 
+        isOpen={isDialogOpen}
+        onClose={handleDialogClose}
+        data={emailData}
+        isLoading={webhookMutation.isPending && !emailData}
+      />
     </div>
   );
 };
