@@ -30,6 +30,9 @@ serve(async (req) => {
       throw new Error('Missing or invalid parameter: messages')
     }
 
+    console.log(`Making request to OpenRouter with model: ${model}`)
+    console.log(`System message: ${messages[0]?.content?.substring(0, 50)}...`)
+    
     // Prepare the request to OpenRouter
     const openRouterRequestBody = {
       model,
@@ -38,8 +41,6 @@ serve(async (req) => {
       max_tokens
     }
 
-    console.log(`Making request to OpenRouter with model: ${model}`)
-    
     // Make the request to OpenRouter API
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -60,6 +61,7 @@ serve(async (req) => {
     }
 
     const data = await response.json()
+    console.log('OpenRouter response received successfully')
     
     // Return the OpenRouter response
     return new Response(JSON.stringify(data), {

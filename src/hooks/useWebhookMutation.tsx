@@ -8,11 +8,17 @@ import { AlertCircle, Clock } from "lucide-react";
 export const useWebhookMutation = () => {
   const mutation = useMutation({
     mutationFn: async (data: WebhookData) => {
+      console.log("Starting webhook mutation with data:", data);
       return await sendWebhook(data);
+    },
+    onSuccess: (data: WebhookResponse) => {
+      console.log("Webhook mutation succeeded with response:", data);
     },
     onError: (error: Error) => {
       // Check if this is a timeout error
       const isTimeoutError = error.message.includes('timed out');
+      
+      console.error("Webhook mutation failed:", error);
       
       toast.error(
         <div className="flex flex-col gap-2">
