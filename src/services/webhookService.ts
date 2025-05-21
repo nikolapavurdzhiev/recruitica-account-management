@@ -17,6 +17,11 @@ export interface WebhookResponse {
   clientList: WebhookContact[];
 }
 
+// Internal interface to match the n8n response format
+interface N8nWebhookResponse {
+  output: WebhookResponse;
+}
+
 export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> => {
   console.log("Sending webhook data:", data);
   
@@ -48,6 +53,13 @@ export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> =
     const responseData = await response.json();
     console.log("Webhook response data:", responseData);
     
+    // Handle n8n's nested response format
+    if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].output) {
+      console.log("Found n8n nested response format, extracting output data");
+      return responseData[0].output as WebhookResponse;
+    }
+    
+    // Fallback for direct response format
     return responseData as WebhookResponse;
   } catch (error: any) {
     // Check if the error is due to timeout
