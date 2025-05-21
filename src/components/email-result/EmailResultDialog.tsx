@@ -13,6 +13,7 @@ import { toast } from "sonner";
 interface EmailResultDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onConfirm: () => void;
   data: WebhookResponse | undefined;
   isLoading: boolean;
 }
@@ -20,6 +21,7 @@ interface EmailResultDialogProps {
 const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
   isOpen,
   onClose,
+  onConfirm,
   data,
   isLoading
 }) => {
@@ -61,8 +63,20 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
     toast.success("Email copied to clipboard");
   };
 
+  // Handle dialog open state changes
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  };
+
+  // Handle confirmation explicitly
+  const handleConfirmClick = () => {
+    onConfirm();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Email Generated Successfully</DialogTitle>
@@ -125,7 +139,7 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
               </Card>
             </div>
             <DialogFooter>
-              <Button onClick={onClose}>Close & Continue</Button>
+              <Button onClick={handleConfirmClick}>Close & Continue</Button>
             </DialogFooter>
           </>
         )}
