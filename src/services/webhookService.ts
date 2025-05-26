@@ -52,15 +52,45 @@ export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> =
     // Parse the response JSON
     const responseData = await response.json();
     console.log("Webhook response data:", responseData);
+    console.log("Response data type:", typeof responseData);
+    console.log("Response data structure:", Array.isArray(responseData) ? "array" : "object");
     
-    // Handle n8n's nested response format
-    if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].output) {
-      console.log("Found n8n nested response format, extracting output data");
-      return responseData[0].output as WebhookResponse;
+    // Primary check: Handle direct object with "output" key
+    if (responseData && typeof responseData === 'object' && !Array.isArray(responseData) && responseData.output) {
+      console.log("Found direct object format with output key, extracting output data");
+      
+      // Validate that output contains expected properties
+      const outputData = responseData.output;
+      if (outputData && typeof outputData === 'object') {
+        console.log("Successfully extracted output data from direct object format");
+        return outputData as WebhookResponse;
+      } else {
+        throw new Error('Invalid output data structure in direct object format');
+      }
     }
     
-    // Fallback for direct response format
-    return responseData as WebhookResponse;
+    // Fallback: Handle n8n's nested array response format
+    if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].output) {
+      console.log("Found n8n nested array format, extracting output data");
+      
+      // Validate that output contains expected properties
+      const outputData = responseData[0].output;
+      if (outputData && typeof outputData === 'object') {
+        console.log("Successfully extracted output data from array format");
+        return outputData as WebhookResponse;
+      } else {
+        throw new Error('Invalid output data structure in array format');
+      }
+    }
+    
+    // Error handling for unexpected format
+    console.error("Unexpected webhook response format. Expected either:");
+    console.error("1. Direct object: { output: { emailSubject, emailBody, clientList } }");
+    console.error("2. Array format: [{ output: { emailSubject, emailBody, clientList } }]");
+    console.error("Received:", responseData);
+    
+    throw new Error('Unexpected webhook response format. The response does not contain the expected "output" structure.');
+    
   } catch (error: any) {
     // Check if the error is due to timeout
     if (error.name === 'AbortError') {
