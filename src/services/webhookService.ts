@@ -31,7 +31,7 @@ export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> =
   
   try {
     const response = await fetch(
-      'https://nikolapavurdjiev.app.n8n.cloud/webhook-test/c1f76bc0-d38a-4b5f-aeae-87578650912b',
+      'https://nikolapavurdjiev.app.n8n.cloud/webhook/c1f76bc0-d38a-4b5f-aeae-87578650912b',
       {
         method: 'POST',
         headers: {
