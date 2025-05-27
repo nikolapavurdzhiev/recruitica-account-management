@@ -117,29 +117,29 @@ export type Database = {
         Row: {
           company_name: string
           created_at: string
+          created_by_user_id: string | null
           email: string
           id: string
           name: string
           updated_at: string
-          user_id: string
         }
         Insert: {
           company_name: string
           created_at?: string
+          created_by_user_id?: string | null
           email: string
           id?: string
           name: string
           updated_at?: string
-          user_id: string
         }
         Update: {
           company_name?: string
           created_at?: string
+          created_by_user_id?: string | null
           email?: string
           id?: string
           name?: string
           updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }

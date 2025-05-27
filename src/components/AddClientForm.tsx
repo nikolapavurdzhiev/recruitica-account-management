@@ -33,6 +33,7 @@ interface AddClientFormProps {
 const AddClientForm = ({ clientListId, onSuccess, onCancel }: AddClientFormProps) => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -43,6 +44,55 @@ const AddClientForm = ({ clientListId, onSuccess, onCancel }: AddClientFormProps
     },
   });
 
+  const checkForDuplicateClient = async (email: string) => {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id, name, email, company_name')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking for duplicate:', error);
+      return null;
+    }
+
+    return data;
+  };
+
+  const addExistingClientToList = async (existingClient: any) => {
+    // Check if client is already in this list
+    const { data: existingEntry, error: checkError } = await supabase
+      .from('client_list_entries')
+      .select('id')
+      .eq('client_list_id', clientListId)
+      .eq('client_id', existingClient.id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing entry:', checkError);
+      throw checkError;
+    }
+
+    if (existingEntry) {
+      throw new Error('This client is already in your list');
+    }
+
+    // Add existing client to the list
+    const { data: newEntry, error: entryError } = await supabase
+      .from('client_list_entries')
+      .insert({
+        client_list_id: clientListId,
+        client_id: existingClient.id,
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (entryError) throw entryError;
+
+    return { ...existingClient, entry: newEntry };
+  };
+
   const onSubmit = async (data: FormValues) => {
     if (!user) {
       toast.error("You must be logged in to add a client");
@@ -52,21 +102,35 @@ const AddClientForm = ({ clientListId, onSuccess, onCancel }: AddClientFormProps
     setIsSubmitting(true);
     
     try {
-      // First, create a new client
+      // First, check if a client with this email already exists
+      setIsCheckingDuplicate(true);
+      const existingClient = await checkForDuplicateClient(data.email);
+      setIsCheckingDuplicate(false);
+
+      if (existingClient) {
+        // Client exists, add them to the list instead of creating a new one
+        const clientWithEntry = await addExistingClientToList(existingClient);
+        toast.success(`Existing client "${existingClient.name}" added to your list!`);
+        onSuccess(clientWithEntry);
+        form.reset();
+        return;
+      }
+
+      // Client doesn't exist, create a new global client
       const { data: newClient, error: clientError } = await supabase
         .from('clients')
         .insert({
-          user_id: user.id,
           name: data.name,
           email: data.email,
           company_name: data.company_name,
+          created_by_user_id: user.id,
         })
         .select()
         .single();
 
       if (clientError) throw clientError;
       
-      // Then, create the entry in the client_list_entries table
+      // Then, add the new client to the current list
       const { data: newEntry, error: entryError } = await supabase
         .from('client_list_entries')
         .insert({
@@ -79,13 +143,14 @@ const AddClientForm = ({ clientListId, onSuccess, onCancel }: AddClientFormProps
 
       if (entryError) throw entryError;
       
-      toast.success("Client added successfully!");
+      toast.success("New client created and added to your list!");
       onSuccess({ ...newClient, entry: newEntry });
       form.reset();
     } catch (error: any) {
       toast.error(`Error adding client: ${error.message}`);
     } finally {
       setIsSubmitting(false);
+      setIsCheckingDuplicate(false);
     }
   };
 
@@ -138,8 +203,8 @@ const AddClientForm = ({ clientListId, onSuccess, onCancel }: AddClientFormProps
           <Button variant="outline" type="button" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Adding..." : "Add Client"}
+          <Button type="submit" disabled={isSubmitting || isCheckingDuplicate}>
+            {isCheckingDuplicate ? "Checking..." : isSubmitting ? "Adding..." : "Add Client"}
           </Button>
         </div>
       </form>

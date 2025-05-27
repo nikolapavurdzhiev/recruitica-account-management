@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import AddClientForm from "@/components/AddClientForm";
+import ClientSearchModal from "@/components/ClientSearchModal";
 
 interface ClientTableProps {
   clientListId: string;
@@ -25,6 +26,7 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   useEffect(() => {
     if (clientListId) {
@@ -35,7 +37,7 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
   const fetchClients = async () => {
     setLoading(true);
     try {
-      // First, fetch all clients that are part of this list
+      // Fetch all clients that are part of this list
       const { data: entries, error: entriesError } = await supabase
         .from('client_list_entries')
         .select(`
@@ -113,14 +115,29 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
     fetchClients();
   };
 
+  const handleClientAdded = (clientWithEntry: any) => {
+    setShowSearchModal(false);
+    fetchClients();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Clients</h2>
-        <Button onClick={() => setShowAddForm(!showAddForm)} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Client
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowSearchModal(true)} 
+            size="sm" 
+            variant="outline"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Add Existing
+          </Button>
+          <Button onClick={() => setShowAddForm(!showAddForm)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Create New
+          </Button>
+        </div>
       </div>
 
       {showAddForm && (
@@ -133,15 +150,31 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
         </div>
       )}
 
+      <ClientSearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        clientListId={clientListId}
+        onClientAdded={handleClientAdded}
+      />
+
       {loading ? (
         <div className="text-center py-4">Loading clients...</div>
       ) : clients.length === 0 ? (
         <div className="bg-muted/40 rounded-lg p-8 text-center">
           <h3 className="font-medium text-lg mb-2">No clients in this list</h3>
           <p className="text-muted-foreground mb-4">
-            Add your first client to get started
+            Add existing clients from the global pool or create new ones
           </p>
-          <Button onClick={() => setShowAddForm(true)}>Add Your First Client</Button>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => setShowSearchModal(true)} variant="outline">
+              <Search className="h-4 w-4 mr-2" />
+              Browse Existing Clients
+            </Button>
+            <Button onClick={() => setShowAddForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Client
+            </Button>
+          </div>
         </div>
       ) : (
         <Table>

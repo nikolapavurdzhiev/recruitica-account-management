@@ -8,11 +8,17 @@ export const useClientLists = (userId: string | undefined) => {
   const [loading, setLoading] = useState(true);
 
   const fetchClientLists = async () => {
+    if (!userId) {
+      setLoading(false);
+      return [];
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('client_lists')
         .select('*')
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
