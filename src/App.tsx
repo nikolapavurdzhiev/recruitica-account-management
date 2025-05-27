@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import ClientListPage from "./pages/ClientListPage";
 import CandidateSubmitPage from "./pages/CandidateSubmitPage";
+import EmailTuneUpPage from "./pages/EmailTuneUpPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/client-lists" element={<ClientListPage />} />
             <Route path="/client-lists/:id" element={<ClientListPage />} />
             <Route path="/candidate/submit" element={<CandidateSubmitPage />} />
+            <Route path="/email-tuneup/:candidateName" element={<EmailTuneUpPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

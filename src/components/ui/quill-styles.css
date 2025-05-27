@@ -1,0 +1,45 @@
+
+/* Custom styles for React-Quill editor */
+.ql-editor {
+  min-height: 300px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.ql-toolbar {
+  border-top: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: none;
+}
+
+.ql-container {
+  border-bottom: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-top: none;
+}
+
+.ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Dark mode support */
+.dark .ql-toolbar {
+  border-color: #374151;
+  background-color: #1f2937;
+}
+
+.dark .ql-container {
+  border-color: #374151;
+  background-color: #1f2937;
+}
+
+.dark .ql-editor {
+  color: #f9fafb;
+}
+
+.dark .ql-editor.ql-blank::before {
+  color: #6b7280;
+}

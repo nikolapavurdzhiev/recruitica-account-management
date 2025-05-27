@@ -15,8 +15,6 @@ import { useClientLists } from "@/hooks/useClientLists";
 import { useLatestCandidate } from "@/hooks/useLatestCandidate";
 import { WebhookData } from "@/services/webhookService";
 import { useWebhookMutation } from "@/hooks/useWebhookMutation";
-import { useEmailResultDialog } from "@/hooks/useEmailResultDialog";
-import EmailResultDialog from "@/components/email-result/EmailResultDialog";
 
 const ClientListPage = () => {
   const { user } = useAuth();
@@ -25,25 +23,10 @@ const ClientListPage = () => {
   const { clientLists, loading, fetchClientLists, setClientLists } = useClientLists(user?.id);
   const { latestCandidate } = useLatestCandidate(user?.id);
   const webhookMutation = useWebhookMutation();
-  const { 
-    isDialogOpen, 
-    emailData, 
-    hasConfirmed, 
-    openDialog, 
-    closeDialog, 
-    confirmAndCloseDialog 
-  } = useEmailResultDialog();
   
   const [selectedListId, setSelectedListId] = useState<string | null>(id || null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeClients, setActiveClients] = useState<any[]>([]);
-
-  // Effect to navigate after user has confirmed
-  useEffect(() => {
-    if (hasConfirmed && !isDialogOpen) {
-      navigate('/candidate/submit');
-    }
-  }, [hasConfirmed, isDialogOpen, navigate]);
 
   useEffect(() => {
     // If we have lists but no selected list, select the first one
@@ -95,7 +78,14 @@ const ClientListPage = () => {
     // Use the webhook mutation to send data and get response
     webhookMutation.mutate(webhookData, {
       onSuccess: (data) => {
-        openDialog(data);
+        // Navigate to the email tune-up page with the email data
+        navigate(`/email-tuneup/${encodeURIComponent(latestCandidate.candidate_name)}`, {
+          state: {
+            emailSubject: data.emailSubject,
+            emailBody: data.emailBody,
+            candidateName: latestCandidate.candidate_name
+          }
+        });
       },
       onError: (error: any) => {
         console.error("Webhook error:", error);
@@ -112,14 +102,6 @@ const ClientListPage = () => {
         );
       }
     });
-  };
-
-  const handleDialogClose = () => {
-    closeDialog();
-  };
-
-  const handleDialogConfirm = () => {
-    confirmAndCloseDialog();
   };
 
   if (!user) {
@@ -170,15 +152,6 @@ const ClientListPage = () => {
           onClick={handleContinueClick}
         />
       )}
-
-      {/* Email Result Dialog */}
-      <EmailResultDialog 
-        isOpen={isDialogOpen}
-        onClose={handleDialogClose}
-        onConfirm={handleDialogConfirm}
-        data={emailData}
-        isLoading={webhookMutation.isPending && !emailData}
-      />
     </div>
   );
 };
