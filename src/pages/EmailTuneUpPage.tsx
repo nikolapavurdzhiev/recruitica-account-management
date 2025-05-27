@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { toast } from "sonner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import Header from "@/components/Header";
 import { getAvailableModels, tuneEmail, AIModel } from "@/services/emailTuningService";
+import { sendFinalizedEmailWebhook, WebhookContact } from "@/services/webhookService";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '../components/ui/quill-styles.css';
@@ -17,6 +17,7 @@ interface EmailData {
   emailSubject: string;
   emailBody: string;
   candidateName: string;
+  clientList?: WebhookContact[];
 }
 
 const EmailTuneUpPage = () => {
@@ -28,7 +29,9 @@ const EmailTuneUpPage = () => {
   const [emailBody, setEmailBody] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [candidateName, setCandidateName] = useState("");
+  const [clientList, setClientList] = useState<WebhookContact[]>([]);
   const [isTuning, setIsTuning] = useState(false);
+  const [isFinalizingContinue, setIsFinalizingContinue] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tuningError, setTuningError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
@@ -59,6 +62,7 @@ const EmailTuneUpPage = () => {
     setEmailSubject(emailData.emailSubject);
     setEmailBody(emailData.emailBody);
     setCandidateName(emailData.candidateName);
+    setClientList(emailData.clientList || []);
     setTuningError(null);
   }, [emailData, navigate]);
 
@@ -138,8 +142,46 @@ const EmailTuneUpPage = () => {
     setSelectedModel(value);
   };
 
-  const handleFinalizeAndContinue = () => {
-    navigate('/candidate/submit');
+  const handleFinalizeAndContinue = async () => {
+    if (!emailBody || !emailSubject) {
+      toast.error("Email content is missing");
+      return;
+    }
+
+    if (clientList.length === 0) {
+      toast.error("Client list is missing. Please go back and select clients.");
+      return;
+    }
+
+    setIsFinalizingContinue(true);
+    
+    try {
+      console.log("Sending finalized email webhook...");
+      await sendFinalizedEmailWebhook({
+        emailSubject,
+        emailBody,
+        clientList
+      });
+      
+      toast.success("Email finalized and sent successfully!");
+      navigate('/candidate/submit');
+    } catch (error: any) {
+      console.error("Finalized email webhook error:", error);
+      toast.error(
+        <div className="flex flex-col gap-2">
+          <div>Failed to send finalized email</div>
+          <div className="text-sm text-muted-foreground">{error.message}</div>
+          <div className="text-sm">You can still continue to the next step.</div>
+        </div>
+      );
+      
+      // Allow user to continue even if webhook fails
+      setTimeout(() => {
+        navigate('/candidate/submit');
+      }, 3000);
+    } finally {
+      setIsFinalizingContinue(false);
+    }
   };
 
   const handleGoBack = () => {
@@ -166,6 +208,11 @@ const EmailTuneUpPage = () => {
               <h1 className="text-3xl font-bold text-primary">Email Tune-Up</h1>
               <p className="text-muted-foreground">
                 Polish your introduction email for {candidateName}
+                {clientList.length > 0 && (
+                  <span className="ml-2 text-sm bg-muted px-2 py-1 rounded">
+                    {clientList.length} clients selected
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -260,10 +307,18 @@ const EmailTuneUpPage = () => {
                   
                   <Button 
                     onClick={handleFinalizeAndContinue}
+                    disabled={isFinalizingContinue || !emailBody}
                     className="w-full"
                     size="lg"
                   >
-                    Finalize & Continue
+                    {isFinalizingContinue ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Finalizing...
+                      </>
+                    ) : (
+                      "Finalize & Continue"
+                    )}
                   </Button>
                 </CardContent>
               </Card>

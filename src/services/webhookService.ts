@@ -17,6 +17,12 @@ export interface WebhookResponse {
   clientList: WebhookContact[];
 }
 
+export interface FinalizedEmailWebhookData {
+  emailSubject: string;
+  emailBody: string;
+  clientList: WebhookContact[];
+}
+
 // Internal interface to match the n8n response format
 interface N8nWebhookResponse {
   output: WebhookResponse;
@@ -96,6 +102,48 @@ export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> =
     if (error.name === 'AbortError') {
       throw new Error('Webhook request timed out after 60 seconds. The n8n workflow might still be processing.');
     }
+    throw error;
+  } finally {
+    // Clear the timeout to prevent memory leaks
+    clearTimeout(timeoutId);
+  }
+};
+
+export const sendFinalizedEmailWebhook = async (data: FinalizedEmailWebhookData): Promise<void> => {
+  console.log("Sending finalized email webhook data:", data);
+  
+  // Create an AbortController with a 60-second timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds timeout
+  
+  try {
+    const response = await fetch(
+      'https://nikolapavurdjiev.app.n8n.cloud/webhook-test/0490a53a-67ce-4fd9-9418-bd8593cee00c',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data),
+        signal: controller.signal
+      }
+    );
+
+    console.log("Finalized email webhook response status:", response.status);
+    
+    if (!response.ok) {
+      throw new Error(`Finalized email webhook request failed with status ${response.status}`);
+    }
+    
+    console.log("Finalized email webhook sent successfully");
+    
+  } catch (error: any) {
+    // Check if the error is due to timeout
+    if (error.name === 'AbortError') {
+      throw new Error('Finalized email webhook request timed out after 60 seconds. The n8n workflow might still be processing.');
+    }
+    console.error("Finalized email webhook error:", error);
     throw error;
   } finally {
     // Clear the timeout to prevent memory leaks
