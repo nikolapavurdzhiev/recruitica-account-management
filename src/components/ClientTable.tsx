@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import AddClientForm from "@/components/AddClientForm";
@@ -110,6 +111,31 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
     }
   };
 
+  const handleRemoveClient = async (clientId: string, clientName: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_list_entries')
+        .delete()
+        .eq('client_list_id', clientListId)
+        .eq('client_id', clientId);
+
+      if (error) throw error;
+
+      // Update local state by removing the client
+      const updatedClients = clients.filter(client => client.id !== clientId);
+      setClients(updatedClients);
+      
+      // Pass updated active clients to parent
+      if (onClientUpdate) {
+        onClientUpdate(updatedClients.filter(client => client.is_active));
+      }
+      
+      toast.success(`${clientName} removed from list successfully`);
+    } catch (error: any) {
+      toast.error(`Error removing client: ${error.message}`);
+    }
+  };
+
   const handleAddClientSuccess = (newClientWithEntry: any) => {
     setShowAddForm(false);
     fetchClients();
@@ -183,7 +209,8 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Company</TableHead>
-              <TableHead className="w-[100px] text-right">Include</TableHead>
+              <TableHead className="w-[100px] text-center">Include</TableHead>
+              <TableHead className="w-[100px] text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -192,11 +219,35 @@ const ClientTable = ({ clientListId, onClientUpdate }: ClientTableProps) => {
                 <TableCell className="font-medium">{client.name}</TableCell>
                 <TableCell>{client.email}</TableCell>
                 <TableCell>{client.company_name}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-center">
                   <Switch
                     checked={client.is_active}
                     onCheckedChange={() => handleToggleClient(client.id, client.is_active)}
                   />
+                </TableCell>
+                <TableCell className="text-center">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove Client</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove <strong>{client.name}</strong> from this list? 
+                          This will only remove them from the current list, not from your client database.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleRemoveClient(client.id, client.name)}>
+                          Remove
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
