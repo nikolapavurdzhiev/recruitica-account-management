@@ -1,23 +1,24 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Copy, Check, ArrowLeft } from "lucide-react";
+import { Loader2, Copy, Check, ArrowLeft, Eye, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
-import { getAvailableModels, tuneEmail, AIModel } from "@/services/emailTuningService";
+import { getAvailableModels, AIModel } from "@/services/emailTuningService";
 import { sendFinalizedEmailWebhook, WebhookContact } from "@/services/webhookService";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import '../components/ui/quill-styles.css';
+import { tuneHTMLEmail } from "@/services/htmlEmailTuningService";
+import EmailPreview from "@/components/email-result/EmailPreview";
+import ChatInterface from "@/components/email-result/ChatInterface";
 
 interface EmailData {
-  emailSubject: string;
-  emailBody: string;
+  html: string;
   candidateName: string;
-  clientList?: WebhookContact[];
+  contacts?: WebhookContact[];
 }
 
 const EmailTuneUpPage = () => {
@@ -26,32 +27,17 @@ const EmailTuneUpPage = () => {
   const emailData = location.state as EmailData;
 
   const [selectedModel, setSelectedModel] = useState<string>("");
-  const [emailBody, setEmailBody] = useState("");
-  const [emailSubject, setEmailSubject] = useState("");
+  const [htmlContent, setHtmlContent] = useState("");
   const [candidateName, setCandidateName] = useState("");
-  const [clientList, setClientList] = useState<WebhookContact[]>([]);
-  const [isTuning, setIsTuning] = useState(false);
+  const [contacts, setContacts] = useState<WebhookContact[]>([]);
   const [isFinalizingContinue, setIsFinalizingContinue] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tuningError, setTuningError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
-  // Rich text editor modules configuration
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      [{'list': 'ordered'}, {'list': 'bullet'}],
-      ['clean']
-    ],
-  };
-
-  const formats = [
-    'header', 'bold', 'italic', 'underline', 'list', 'bullet'
-  ];
-
-  // Load email data and models on component mount
+  // Load email data on component mount
   useEffect(() => {
     if (!emailData) {
       toast.error("No email data found. Redirecting...");
@@ -59,10 +45,9 @@ const EmailTuneUpPage = () => {
       return;
     }
 
-    setEmailSubject(emailData.emailSubject);
-    setEmailBody(emailData.emailBody);
+    setHtmlContent(emailData.html);
     setCandidateName(emailData.candidateName);
-    setClientList(emailData.clientList || []);
+    setContacts(emailData.contacts || []);
     setTuningError(null);
   }, [emailData, navigate]);
 
@@ -86,30 +71,31 @@ const EmailTuneUpPage = () => {
     fetchModels();
   }, [selectedModel]);
 
-  const handleTuneEmail = async () => {
-    if (!emailBody) {
-      toast.error("No email content to tune");
-      return;
+  const handleChatMessage = async (instruction: string) => {
+    if (!htmlContent || !selectedModel) {
+      throw new Error("Missing HTML content or AI model");
     }
-    
+
     setTuningError(null);
-    setIsTuning(true);
-    
+    setIsChatLoading(true);
+
     try {
-      console.log(`Tuning email with model: ${selectedModel}`);
-      const refinedEmail = await tuneEmail({
+      console.log(`Processing chat instruction: ${instruction}`);
+      const modifiedHTML = await tuneHTMLEmail({
         model: selectedModel,
-        emailBody
+        htmlContent,
+        instruction
       });
-      
-      setEmailBody(refinedEmail);
-      toast.success("Email polished successfully with Nikola's style!");
+
+      setHtmlContent(modifiedHTML);
+      toast.success("Email updated successfully!");
     } catch (error: any) {
-      console.error("Tuning error:", error);
-      setTuningError(error.message || "Failed to tune email");
-      toast.error(`Failed to tune email: ${error.message}`);
+      console.error("Chat tuning error:", error);
+      setTuningError(error.message || "Failed to process instruction");
+      toast.error(`Failed to update email: ${error.message}`);
+      throw error;
     } finally {
-      setIsTuning(false);
+      setIsChatLoading(false);
     }
   };
 
@@ -117,14 +103,14 @@ const EmailTuneUpPage = () => {
     try {
       // Try to copy as HTML first, fallback to plain text
       if (navigator.clipboard && window.ClipboardItem) {
-        const blob = new Blob([emailBody], { type: 'text/html' });
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
       } else {
         // Fallback: copy as plain text (strip HTML)
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = emailBody;
-        const plainText = tempDiv.textContent || tempDiv.innerText || emailBody;
+        tempDiv.innerHTML = htmlContent;
+        const plainText = tempDiv.textContent || tempDiv.innerText || htmlContent;
         await navigator.clipboard.writeText(plainText);
       }
       
@@ -143,13 +129,13 @@ const EmailTuneUpPage = () => {
   };
 
   const handleFinalizeAndContinue = async () => {
-    if (!emailBody || !emailSubject) {
+    if (!htmlContent) {
       toast.error("Email content is missing");
       return;
     }
 
-    if (clientList.length === 0) {
-      toast.error("Client list is missing. Please go back and select clients.");
+    if (contacts.length === 0) {
+      toast.error("Contact list is missing. Please go back and select contacts.");
       return;
     }
 
@@ -158,9 +144,9 @@ const EmailTuneUpPage = () => {
     try {
       console.log("Sending finalized email webhook...");
       await sendFinalizedEmailWebhook({
-        emailSubject,
-        emailBody,
-        clientList
+        emailSubject: "Candidate Introduction", // Extract from HTML if needed
+        emailBody: htmlContent,
+        clientList: contacts
       });
       
       toast.success("Email finalized and sent successfully!");
@@ -205,55 +191,61 @@ const EmailTuneUpPage = () => {
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-primary">Email Tune-Up</h1>
+              <h1 className="text-3xl font-bold text-primary">Email Polish & Preview</h1>
               <p className="text-muted-foreground">
-                Polish your introduction email for {candidateName}
-                {clientList.length > 0 && (
+                Review and refine your introduction email for {candidateName}
+                {contacts.length > 0 && (
                   <span className="ml-2 text-sm bg-muted px-2 py-1 rounded">
-                    {clientList.length} clients selected
+                    {contacts.length} contacts selected
                   </span>
                 )}
               </p>
             </div>
           </div>
 
+          {tuningError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{tuningError}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Email Editor - Takes up 2/3 of the space on large screens */}
+            {/* Email Preview and Chat - Takes up 2/3 of the space */}
             <div className="lg:col-span-2">
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="text-xl">{emailSubject}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {tuningError && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertTitle>Error tuning email</AlertTitle>
-                      <AlertDescription>{tuningError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <div className="space-y-4">
-                    <ReactQuill
-                      theme="snow"
-                      value={emailBody}
-                      onChange={setEmailBody}
-                      modules={modules}
-                      formats={formats}
-                      className="min-h-[400px]"
-                      placeholder="Email content will appear here..."
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <Tabs defaultValue="preview" className="h-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="preview" className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Preview
+                  </TabsTrigger>
+                  <TabsTrigger value="chat" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    AI Polish
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="preview" className="mt-4">
+                  <EmailPreview htmlContent={htmlContent} />
+                </TabsContent>
+                
+                <TabsContent value="chat" className="mt-4">
+                  <ChatInterface
+                    onSendMessage={handleChatMessage}
+                    isLoading={isChatLoading}
+                    className="h-[600px]"
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
 
-            {/* AI Controls & Actions - Takes up 1/3 of the space */}
+            {/* Controls & Actions - Takes up 1/3 of the space */}
             <div className="space-y-6">
               {/* AI Model Selection */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">AI Assistant</CardTitle>
+                  <CardTitle className="text-lg">AI Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -271,21 +263,6 @@ const EmailTuneUpPage = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <Button 
-                    onClick={handleTuneEmail} 
-                    disabled={isTuning || !emailBody || !selectedModel}
-                    className="w-full"
-                  >
-                    {isTuning ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Polishing...
-                      </>
-                    ) : (
-                      "✨ Tune Up with Nikola's Style"
-                    )}
-                  </Button>
                 </CardContent>
               </Card>
 
@@ -298,7 +275,7 @@ const EmailTuneUpPage = () => {
                   <Button 
                     variant="outline" 
                     onClick={handleCopyEmail} 
-                    disabled={!emailBody}
+                    disabled={!htmlContent}
                     className="w-full"
                   >
                     {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
@@ -307,7 +284,7 @@ const EmailTuneUpPage = () => {
                   
                   <Button 
                     onClick={handleFinalizeAndContinue}
-                    disabled={isFinalizingContinue || !emailBody}
+                    disabled={isFinalizingContinue || !htmlContent}
                     className="w-full"
                     size="lg"
                   >

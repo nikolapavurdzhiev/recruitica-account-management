@@ -12,9 +12,8 @@ export interface WebhookData {
 }
 
 export interface WebhookResponse {
-  emailSubject: string;
-  emailBody: string;
-  clientList: WebhookContact[];
+  html: string;
+  contacts: WebhookContact[];
 }
 
 export interface FinalizedEmailWebhookData {
@@ -23,9 +22,16 @@ export interface FinalizedEmailWebhookData {
   clientList: WebhookContact[];
 }
 
-// Internal interface to match the n8n response format
+// Internal interface to match the new n8n response format
 interface N8nWebhookResponse {
-  output: WebhookResponse;
+  response: {
+    body: {
+      html: string;
+      contacts: WebhookContact[];
+    };
+    headers: {};
+    statusCode: number;
+  };
 }
 
 export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> => {
@@ -61,41 +67,37 @@ export const sendWebhook = async (data: WebhookData): Promise<WebhookResponse> =
     console.log("Response data type:", typeof responseData);
     console.log("Response data structure:", Array.isArray(responseData) ? "array" : "object");
     
-    // Primary check: Handle direct object with "output" key
-    if (responseData && typeof responseData === 'object' && !Array.isArray(responseData) && responseData.output) {
-      console.log("Found direct object format with output key, extracting output data");
+    // Handle new array format with response.body structure
+    if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].response?.body) {
+      console.log("Found new n8n array format with response.body, extracting data");
       
-      // Validate that output contains expected properties
-      const outputData = responseData.output;
-      if (outputData && typeof outputData === 'object') {
-        console.log("Successfully extracted output data from direct object format");
-        return outputData as WebhookResponse;
+      const bodyData = responseData[0].response.body;
+      if (bodyData && bodyData.html && bodyData.contacts) {
+        console.log("Successfully extracted HTML and contacts from new format");
+        return {
+          html: bodyData.html,
+          contacts: bodyData.contacts
+        } as WebhookResponse;
       } else {
-        throw new Error('Invalid output data structure in direct object format');
+        throw new Error('Invalid body data structure in new array format');
       }
     }
     
-    // Fallback: Handle n8n's nested array response format
-    if (Array.isArray(responseData) && responseData.length > 0 && responseData[0].output) {
-      console.log("Found n8n nested array format, extracting output data");
-      
-      // Validate that output contains expected properties
-      const outputData = responseData[0].output;
-      if (outputData && typeof outputData === 'object') {
-        console.log("Successfully extracted output data from array format");
-        return outputData as WebhookResponse;
-      } else {
-        throw new Error('Invalid output data structure in array format');
-      }
+    // Fallback: Handle direct object format if needed
+    if (responseData && typeof responseData === 'object' && !Array.isArray(responseData) && responseData.html) {
+      console.log("Found direct object format, extracting data");
+      return {
+        html: responseData.html,
+        contacts: responseData.contacts || []
+      } as WebhookResponse;
     }
     
     // Error handling for unexpected format
-    console.error("Unexpected webhook response format. Expected either:");
-    console.error("1. Direct object: { output: { emailSubject, emailBody, clientList } }");
-    console.error("2. Array format: [{ output: { emailSubject, emailBody, clientList } }]");
+    console.error("Unexpected webhook response format. Expected:");
+    console.error("Array format: [{ response: { body: { html, contacts } } }]");
     console.error("Received:", responseData);
     
-    throw new Error('Unexpected webhook response format. The response does not contain the expected "output" structure.');
+    throw new Error('Unexpected webhook response format. The response does not contain the expected HTML structure.');
     
   } catch (error: any) {
     // Check if the error is due to timeout
