@@ -120,7 +120,7 @@ export const sendFinalizedEmailWebhook = async (data: FinalizedEmailWebhookData)
   
   try {
     const response = await fetch(
-      'https://nikolapavurdjiev.app.n8n.cloud/webhook-test/0490a53a-67ce-4fd9-9418-bd8593cee00c',
+      'https://nikolapavurdjiev.app.n8n.cloud/webhook/0490a53a-67ce-4fd9-9418-bd8593cee00c',
       {
         method: 'POST',
         headers: {
