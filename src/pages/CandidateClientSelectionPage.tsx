@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,11 +27,20 @@ const CandidateClientSelectionPage = () => {
   const [activeClients, setActiveClients] = useState<any[]>([]);
 
   useEffect(() => {
-    // If we have lists but no selected list, select the first one
+    // Priority 1: Use client_list_id from the latest candidate if available and the list exists
+    if (latestCandidate?.client_list_id && clientLists.length > 0) {
+      const candidateListExists = clientLists.some(list => list.id === latestCandidate.client_list_id);
+      if (candidateListExists) {
+        setSelectedListId(latestCandidate.client_list_id);
+        return;
+      }
+    }
+    
+    // Priority 2: Fall back to first available list if no candidate selection or list doesn't exist
     if (clientLists.length > 0 && !selectedListId) {
       setSelectedListId(clientLists[0].id);
     }
-  }, [clientLists, selectedListId]);
+  }, [clientLists, latestCandidate, selectedListId]);
 
   const handleListChange = (listId: string) => {
     setSelectedListId(listId);
