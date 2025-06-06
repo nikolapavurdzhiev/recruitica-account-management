@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
@@ -20,8 +19,12 @@ const Header = () => {
     <header className="bg-background border-b">
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center space-x-6">
-          <Link to="/" className="font-semibold text-lg text-primary">
-            Recruitica
+          <Link to="/" className="flex items-center">
+            <img 
+              src="https://i.ibb.co/xS4qLNK9/780x184.png" 
+              alt="Recruitica" 
+              className="h-8 w-auto"
+            />
           </Link>
           
           {user && (
