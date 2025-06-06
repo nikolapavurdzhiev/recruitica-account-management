@@ -1,7 +1,9 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
   const { user, signOut } = useAuth();
@@ -54,7 +56,8 @@ const Header = () => {
           )}
         </div>
         
-        <div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           {user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground hidden sm:inline">
