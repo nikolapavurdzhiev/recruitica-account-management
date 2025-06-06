@@ -1,7 +1,19 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const SubmitSuccess = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to client lists with workflow parameter after 3 seconds
+    const timer = setTimeout(() => {
+      navigate("/client-lists?workflow=candidate");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
   return (
     <div className="flex flex-col items-center justify-center space-y-4 p-6 text-center">
       <div className="rounded-full bg-green-100 p-3">

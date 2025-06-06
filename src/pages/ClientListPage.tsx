@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import ClientTable from "@/components/ClientTable";
@@ -20,6 +20,7 @@ const ClientListPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { clientLists, loading, fetchClientLists, setClientLists } = useClientLists(user?.id);
   const { latestCandidate } = useLatestCandidate(user?.id);
   const webhookMutation = useWebhookMutation();
@@ -27,6 +28,9 @@ const ClientListPage = () => {
   const [selectedListId, setSelectedListId] = useState<string | null>(id || null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeClients, setActiveClients] = useState<any[]>([]);
+
+  // Check if we're in candidate workflow mode
+  const isInCandidateWorkflow = searchParams.get('workflow') === 'candidate';
 
   useEffect(() => {
     // If we have lists but no selected list, select the first one
@@ -37,14 +41,22 @@ const ClientListPage = () => {
 
   const handleListChange = (listId: string) => {
     setSelectedListId(listId);
-    navigate(`/client-lists/${listId}`);
+    // Preserve workflow parameter when changing lists
+    const newUrl = isInCandidateWorkflow 
+      ? `/client-lists/${listId}?workflow=candidate`
+      : `/client-lists/${listId}`;
+    navigate(newUrl);
   };
 
   const handleCreateListSuccess = (newList: any) => {
     setClientLists([newList, ...clientLists]);
     setSelectedListId(newList.id);
     setShowCreateForm(false);
-    navigate(`/client-lists/${newList.id}`);
+    // Preserve workflow parameter when creating new list
+    const newUrl = isInCandidateWorkflow 
+      ? `/client-lists/${newList.id}?workflow=candidate`
+      : `/client-lists/${newList.id}`;
+    navigate(newUrl);
     toast.success("Client list created successfully!");
   };
 
@@ -112,6 +124,12 @@ const ClientListPage = () => {
     return null;
   }
 
+  // Determine if Continue button should be shown
+  const shouldShowContinueButton = isInCandidateWorkflow && 
+    selectedListId && 
+    activeClients.length > 0 && 
+    latestCandidate;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
@@ -149,8 +167,8 @@ const ClientListPage = () => {
         </div>
       </main>
 
-      {/* Continue button with loading state */}
-      {selectedListId && activeClients.length > 0 && latestCandidate && (
+      {/* Continue button - only show in candidate workflow mode */}
+      {shouldShowContinueButton && (
         <ContinueButton 
           isSubmitting={webhookMutation.isPending}
           onClick={handleContinueClick}
