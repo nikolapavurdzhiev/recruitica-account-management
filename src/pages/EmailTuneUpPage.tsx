@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Loader2, Copy, Check, ArrowLeft, Eye, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -250,18 +249,16 @@ const EmailTuneUpPage = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">AI Model</label>
-                    <Select value={selectedModel} onValueChange={handleModelChange} disabled={loadingModels}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingModels ? "Loading models..." : "Select model"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableModels.map((model) => (
-                          <SelectItem key={model.value} value={model.value}>
-                            {model.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={selectedModel}
+                      onValueChange={handleModelChange}
+                      placeholder={loadingModels ? "Loading models..." : "Select model"}
+                      disabled={loadingModels}
+                      options={availableModels.map((model) => ({
+                        value: model.value,
+                        label: model.label,
+                      }))}
+                    />
                   </div>
                 </CardContent>
               </Card>
