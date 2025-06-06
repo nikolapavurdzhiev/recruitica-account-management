@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Loader2, Copy, Check, ArrowLeft, Eye, MessageSquare } from "lucide-react";
+import { Loader2, ArrowLeft, Eye, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,7 +30,6 @@ const EmailTuneUpPage = () => {
   const [candidateName, setCandidateName] = useState("");
   const [contacts, setContacts] = useState<WebhookContact[]>([]);
   const [isFinalizingContinue, setIsFinalizingContinue] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [tuningError, setTuningError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
@@ -95,30 +94,6 @@ const EmailTuneUpPage = () => {
       throw error;
     } finally {
       setIsChatLoading(false);
-    }
-  };
-
-  const handleCopyEmail = async () => {
-    try {
-      // Try to copy as HTML first, fallback to plain text
-      if (navigator.clipboard && window.ClipboardItem) {
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const clipboardItem = new ClipboardItem({ 'text/html': blob });
-        await navigator.clipboard.write([clipboardItem]);
-      } else {
-        // Fallback: copy as plain text (strip HTML)
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = htmlContent;
-        const plainText = tempDiv.textContent || tempDiv.innerText || htmlContent;
-        await navigator.clipboard.writeText(plainText);
-      }
-      
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast.success("Email copied to clipboard");
-    } catch (error) {
-      console.error("Copy failed:", error);
-      toast.error("Failed to copy email");
     }
   };
 
@@ -269,16 +244,6 @@ const EmailTuneUpPage = () => {
                   <CardTitle className="text-lg">Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleCopyEmail} 
-                    disabled={!htmlContent}
-                    className="w-full"
-                  >
-                    {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                    {copied ? "Copied!" : "Copy Email"}
-                  </Button>
-                  
                   <Button 
                     onClick={handleFinalizeAndContinue}
                     disabled={isFinalizingContinue || !htmlContent}
