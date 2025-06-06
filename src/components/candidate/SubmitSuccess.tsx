@@ -6,9 +6,9 @@ const SubmitSuccess = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to client lists with workflow parameter after 3 seconds
+    // Redirect to candidate client selection page after 3 seconds
     const timer = setTimeout(() => {
-      navigate("/client-lists?workflow=candidate");
+      navigate("/candidate/select-clients");
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -34,7 +34,7 @@ const SubmitSuccess = () => {
       </div>
       <h2 className="text-2xl font-bold text-primary">Congratulations!</h2>
       <p className="text-lg">You just submitted a candidate</p>
-      <p className="text-sm text-muted-foreground">Redirecting to client list...</p>
+      <p className="text-sm text-muted-foreground">Redirecting to client selection...</p>
     </div>
   );
 };
