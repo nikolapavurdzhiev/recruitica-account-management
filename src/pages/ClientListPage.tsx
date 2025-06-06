@@ -78,13 +78,12 @@ const ClientListPage = () => {
     // Use the webhook mutation to send data and get response
     webhookMutation.mutate(webhookData, {
       onSuccess: (data) => {
-        // Navigate to the email tune-up page with the email data AND client list
+        // Navigate to the email tune-up page with the HTML data AND client list
         navigate(`/email-tuneup/${encodeURIComponent(latestCandidate.candidate_name)}`, {
           state: {
-            emailSubject: data.emailSubject,
-            emailBody: data.emailBody,
+            html: data.html,
             candidateName: latestCandidate.candidate_name,
-            clientList: activeClients.map(client => ({
+            contacts: activeClients.map(client => ({
               name: client.name,
               email: client.email,
               company: client.company_name

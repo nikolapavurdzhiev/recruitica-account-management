@@ -27,22 +27,26 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
   isLoading
 }) => {
   const [selectedModel, setSelectedModel] = useState(AI_MODELS[0].value);
-  const [emailBody, setEmailBody] = useState("");
+  const [emailContent, setEmailContent] = useState("");
   const [isTuning, setIsTuning] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tuningError, setTuningError] = useState<string | null>(null);
   
-  // Set email body when data changes
+  // Set email content when data changes - extract text from HTML
   useEffect(() => {
-    if (data?.emailBody) {
-      console.log("Setting email body from data:", data.emailBody.substring(0, 50) + "...");
-      setEmailBody(data.emailBody);
+    if (data?.html) {
+      console.log("Setting email content from HTML data:", data.html.substring(0, 50) + "...");
+      // Extract text content from HTML for display
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = data.html;
+      const textContent = tempDiv.textContent || tempDiv.innerText || data.html;
+      setEmailContent(textContent);
       setTuningError(null); // Reset error state when new data arrives
     }
-  }, [data?.emailBody]);
+  }, [data?.html]);
 
   const handleTuneEmail = async () => {
-    if (!emailBody) {
+    if (!emailContent) {
       toast.error("No email content to tune");
       return;
     }
@@ -54,10 +58,10 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
       console.log(`Tuning email with model: ${selectedModel}`);
       const refinedEmail = await tuneEmail({
         model: selectedModel,
-        emailBody
+        emailBody: emailContent
       });
       
-      setEmailBody(refinedEmail);
+      setEmailContent(refinedEmail);
       toast.success("Email polished successfully.");
     } catch (error: any) {
       console.error("Tuning error:", error);
@@ -69,7 +73,7 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
   };
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText(emailBody);
+    navigator.clipboard.writeText(emailContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast.success("Email copied to clipboard");
@@ -109,7 +113,7 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
             <div className="grid grid-cols-1 gap-4 py-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>{data?.emailSubject || "Subject"}</CardTitle>
+                  <CardTitle>Email Content</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {tuningError && (
@@ -119,7 +123,7 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
                     </Alert>
                   )}
                   <ScrollArea className="h-[300px] rounded-md border p-4">
-                    <div className="whitespace-pre-wrap">{emailBody}</div>
+                    <div className="whitespace-pre-wrap">{emailContent}</div>
                   </ScrollArea>
                 </CardContent>
                 <CardFooter className="flex justify-between">
@@ -138,7 +142,7 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
                     </Select>
                     <Button 
                       onClick={handleTuneEmail} 
-                      disabled={isTuning || !emailBody}
+                      disabled={isTuning || !emailContent}
                     >
                       {isTuning ? (
                         <>
@@ -153,7 +157,7 @@ const EmailResultDialog: React.FC<EmailResultDialogProps> = ({
                   <Button 
                     variant="outline" 
                     onClick={handleCopyEmail} 
-                    disabled={!emailBody}
+                    disabled={!emailContent}
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     <span className="ml-2">{copied ? "Copied" : "Copy Email"}</span>
