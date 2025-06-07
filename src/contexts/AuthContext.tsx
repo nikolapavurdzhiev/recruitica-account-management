@@ -27,38 +27,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Handle OAuth redirects and sign out
-        if (event === "SIGNED_IN" && session) {
-          // For OAuth logins, redirect to home
-          if (window.location.pathname === "/auth") {
-            window.location.href = "/";
-          }
-        } else if (event === "SIGNED_OUT") {
+        // Only redirect on sign out, not on sign in or token refresh
+        if (event === "SIGNED_OUT") {
           // Use window.location to avoid React Router issues
           window.location.href = "/auth";
-        }
-        
-        // Set loading to false after initial session check
-        if (loading) {
-          setLoading(false);
         }
       }
     );
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [loading]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -72,13 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`
-      }
-    });
+    const { error } = await supabase.auth.signUp({ email, password });
     return { error };
   };
 
