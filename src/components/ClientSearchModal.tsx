@@ -164,13 +164,9 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
                 {availableClients.length > 0 && (
                   <div className="flex items-center space-x-2 mb-4 p-3 bg-muted/50 rounded-lg">
                     <Checkbox
-                      checked={isAllSelected}
+                      checked={isAllSelected || isSomeSelected}
                       onCheckedChange={handleSelectAll}
-                      ref={(ref: HTMLInputElement | null) => {
-                        if (ref) {
-                          ref.indeterminate = isSomeSelected;
-                        }
-                      }}
+                      className={isSomeSelected && !isAllSelected ? "data-[state=checked]:bg-muted data-[state=checked]:opacity-50" : ""}
                     />
                     <span className="text-sm font-medium">
                       Select All ({availableClients.length} available)
