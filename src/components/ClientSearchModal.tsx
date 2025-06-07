@@ -166,7 +166,7 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
                     <Checkbox
                       checked={isAllSelected}
                       onCheckedChange={handleSelectAll}
-                      ref={(ref) => {
+                      ref={(ref: HTMLInputElement | null) => {
                         if (ref) {
                           ref.indeterminate = isSomeSelected;
                         }
