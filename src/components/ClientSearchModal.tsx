@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plus } from "lucide-react";
+import ClientSearchInput from "./client-search/ClientSearchInput";
+import ClientSelectAllControls from "./client-search/ClientSelectAllControls";
+import ClientSearchTable from "./client-search/ClientSearchTable";
+import ClientSearchModalFooter from "./client-search/ClientSearchModalFooter";
 
 interface Client {
   id: string;
@@ -142,15 +141,10 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
         </DialogHeader>
         
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search by name, email, or company..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <ClientSearchInput 
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
 
           <div className="flex-1 overflow-auto">
             {loading ? (
@@ -162,99 +156,32 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
             ) : (
               <>
                 {availableClients.length > 0 && (
-                  <div className="flex items-center space-x-2 mb-4 p-3 bg-muted/50 rounded-lg">
-                    <Checkbox
-                      checked={isAllSelected || isSomeSelected}
-                      onCheckedChange={handleSelectAll}
-                      className={isSomeSelected && !isAllSelected ? "data-[state=checked]:bg-muted data-[state=checked]:opacity-50" : ""}
-                    />
-                    <span className="text-sm font-medium">
-                      Select All ({availableClients.length} available)
-                    </span>
-                    {selectedClientIds.length > 0 && (
-                      <span className="text-sm text-muted-foreground">
-                        • {selectedClientIds.length} selected
-                      </span>
-                    )}
-                  </div>
+                  <ClientSelectAllControls
+                    isAllSelected={isAllSelected}
+                    isSomeSelected={isSomeSelected}
+                    availableClientsCount={availableClients.length}
+                    selectedCount={selectedClientIds.length}
+                    onSelectAll={handleSelectAll}
+                  />
                 )}
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">Select</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead className="w-[100px]">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clients.map((client) => {
-                      const isAdded = addedClientIds.includes(client.id);
-                      const isSelected = selectedClientIds.includes(client.id);
-
-                      return (
-                        <TableRow key={client.id} className={isAdded ? "opacity-60" : ""}>
-                          <TableCell>
-                            {isAdded ? (
-                              <div className="h-4 w-4 flex items-center justify-center">
-                                <Plus className="h-3 w-3 text-green-600" />
-                              </div>
-                            ) : (
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={(checked) => handleClientSelect(client.id, checked as boolean)}
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium">{client.name}</TableCell>
-                          <TableCell>{client.email}</TableCell>
-                          <TableCell>{client.company_name}</TableCell>
-                          <TableCell>
-                            {isAdded ? (
-                              <span className="text-xs text-green-600 font-medium">Added</span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">Available</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                <ClientSearchTable
+                  clients={clients}
+                  selectedClientIds={selectedClientIds}
+                  addedClientIds={addedClientIds}
+                  onClientSelect={handleClientSelect}
+                />
               </>
             )}
           </div>
         </div>
         
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            {selectedClientIds.length > 0 && (
-              <span>{selectedClientIds.length} client{selectedClientIds.length > 1 ? 's' : ''} selected</span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-            {selectedClientIds.length > 0 && (
-              <Button 
-                onClick={addSelectedClients}
-                disabled={isAddingClients}
-              >
-                {isAddingClients ? (
-                  "Adding..."
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Selected ({selectedClientIds.length})
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
+        <ClientSearchModalFooter
+          selectedCount={selectedClientIds.length}
+          isAddingClients={isAddingClients}
+          onClose={onClose}
+          onAddSelected={addSelectedClients}
+        />
       </DialogContent>
     </Dialog>
   );
