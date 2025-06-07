@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, Plus } from "lucide-react";
@@ -26,11 +27,15 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
   const [searchQuery, setSearchQuery] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
-  const [addingClientId, setAddingClientId] = useState<string | null>(null);
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [addedClientIds, setAddedClientIds] = useState<string[]>([]);
+  const [isAddingClients, setIsAddingClients] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       searchClients();
+      setSelectedClientIds([]);
+      setAddedClientIds([]);
     }
   }, [isOpen, searchQuery]);
 
@@ -46,7 +51,7 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
         query = query.or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,company_name.ilike.%${searchQuery}%`);
       }
 
-      const { data, error } = await query.limit(20);
+      const { data, error } = await query.limit(50);
 
       if (error) throw error;
 
@@ -69,32 +74,65 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
     }
   };
 
-  const addClientToList = async (client: Client) => {
-    setAddingClientId(client.id);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const availableClientIds = clients
+        .filter(client => !addedClientIds.includes(client.id))
+        .map(client => client.id);
+      setSelectedClientIds(availableClientIds);
+    } else {
+      setSelectedClientIds([]);
+    }
+  };
+
+  const handleClientSelect = (clientId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedClientIds(prev => [...prev, clientId]);
+    } else {
+      setSelectedClientIds(prev => prev.filter(id => id !== clientId));
+    }
+  };
+
+  const addSelectedClients = async () => {
+    if (selectedClientIds.length === 0) return;
+
+    setIsAddingClients(true);
     try {
-      const { data: newEntry, error } = await supabase
+      // Batch insert all selected clients
+      const entries = selectedClientIds.map(clientId => ({
+        client_list_id: clientListId,
+        client_id: clientId,
+        is_active: true,
+      }));
+
+      const { data: newEntries, error } = await supabase
         .from('client_list_entries')
-        .insert({
-          client_list_id: clientListId,
-          client_id: client.id,
-          is_active: true,
-        })
-        .select()
-        .single();
+        .insert(entries)
+        .select();
 
       if (error) throw error;
 
-      toast.success(`${client.name} added to your list!`);
-      onClientAdded({ ...client, entry: newEntry });
-      
-      // Remove the added client from the search results
-      setClients(clients.filter(c => c.id !== client.id));
+      // Update state to show these clients as added
+      setAddedClientIds(prev => [...prev, ...selectedClientIds]);
+      setSelectedClientIds([]);
+
+      // Notify parent component about the additions
+      const addedClients = clients.filter(client => selectedClientIds.includes(client.id));
+      addedClients.forEach((client, index) => {
+        onClientAdded({ ...client, entry: newEntries?.[index] });
+      });
+
+      toast.success(`${selectedClientIds.length} client${selectedClientIds.length > 1 ? 's' : ''} added to your list!`);
     } catch (error: any) {
-      toast.error(`Error adding client: ${error.message}`);
+      toast.error(`Error adding clients: ${error.message}`);
     } finally {
-      setAddingClientId(null);
+      setIsAddingClients(false);
     }
   };
+
+  const availableClients = clients.filter(client => !addedClientIds.includes(client.id));
+  const isAllSelected = availableClients.length > 0 && selectedClientIds.length === availableClients.length;
+  const isSomeSelected = selectedClientIds.length > 0 && selectedClientIds.length < availableClients.length;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -122,49 +160,104 @@ const ClientSearchModal = ({ isOpen, onClose, clientListId, onClientAdded }: Cli
                 {searchQuery ? "No clients found matching your search." : "No available clients to add."}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead className="w-[100px]">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell>{client.email}</TableCell>
-                      <TableCell>{client.company_name}</TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => addClientToList(client)}
-                          disabled={addingClientId === client.id}
-                        >
-                          {addingClientId === client.id ? (
-                            "Adding..."
-                          ) : (
-                            <>
-                              <Plus className="h-3 w-3 mr-1" />
-                              Add
-                            </>
-                          )}
-                        </Button>
-                      </TableCell>
+              <>
+                {availableClients.length > 0 && (
+                  <div className="flex items-center space-x-2 mb-4 p-3 bg-muted/50 rounded-lg">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                      ref={(ref) => {
+                        if (ref) {
+                          ref.indeterminate = isSomeSelected;
+                        }
+                      }}
+                    />
+                    <span className="text-sm font-medium">
+                      Select All ({availableClients.length} available)
+                    </span>
+                    {selectedClientIds.length > 0 && (
+                      <span className="text-sm text-muted-foreground">
+                        • {selectedClientIds.length} selected
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">Select</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {clients.map((client) => {
+                      const isAdded = addedClientIds.includes(client.id);
+                      const isSelected = selectedClientIds.includes(client.id);
+
+                      return (
+                        <TableRow key={client.id} className={isAdded ? "opacity-60" : ""}>
+                          <TableCell>
+                            {isAdded ? (
+                              <div className="h-4 w-4 flex items-center justify-center">
+                                <Plus className="h-3 w-3 text-green-600" />
+                              </div>
+                            ) : (
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => handleClientSelect(client.id, checked as boolean)}
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">{client.name}</TableCell>
+                          <TableCell>{client.email}</TableCell>
+                          <TableCell>{client.company_name}</TableCell>
+                          <TableCell>
+                            {isAdded ? (
+                              <span className="text-xs text-green-600 font-medium">Added</span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Available</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </div>
         </div>
         
-        <div className="flex justify-end pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
+        <div className="flex justify-between items-center pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            {selectedClientIds.length > 0 && (
+              <span>{selectedClientIds.length} client{selectedClientIds.length > 1 ? 's' : ''} selected</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+            {selectedClientIds.length > 0 && (
+              <Button 
+                onClick={addSelectedClients}
+                disabled={isAddingClients}
+              >
+                {isAddingClients ? (
+                  "Adding..."
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Selected ({selectedClientIds.length})
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
