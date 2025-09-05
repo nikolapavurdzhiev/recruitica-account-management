@@ -26,9 +26,9 @@ serve(async (req) => {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': Deno.env.get('APP_URL') || 'https://recruitica.app',
+        'HTTP-Referer': Deno.env.get('APP_URL') || 'https://recruitment.app',
         'Content-Type': 'application/json',
-        'X-Title': 'Recruitica App'
+        'X-Title': 'Recruitment App'
       }
     })
 

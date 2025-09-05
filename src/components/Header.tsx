@@ -22,11 +22,7 @@ const Header = () => {
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center space-x-6">
           <Link to="/" className="flex items-center">
-            <img 
-              src="https://i.ibb.co/xS4qLNK9/780x184.png" 
-              alt="Recruitica" 
-              className="h-8 w-auto"
-            />
+            {/* Logo space left intentionally blank */}
           </Link>
           
           {user && (

@@ -21,7 +21,7 @@ const Dashboard = () => {
       <main className="flex-1 container py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Welcome to Recruitica</h1>
+            <h1 className="text-3xl font-bold text-foreground">Welcome to Recruitment</h1>
             <p className="text-muted-foreground mt-2">
               Manage your recruitment process efficiently
             </p>
@@ -71,7 +71,7 @@ const Dashboard = () => {
       
       <footer className="py-6 border-t text-center text-sm text-muted-foreground">
         <div className="container">
-          <p>© {new Date().getFullYear()} Recruitica - Account Management System</p>
+          <p>© {new Date().getFullYear()} Recruitment - Account Management System</p>
         </div>
       </footer>
     </div>

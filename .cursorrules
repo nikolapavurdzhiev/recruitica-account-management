@@ -1,0 +1,84 @@
+# Recruitica Account Management System - Project Intelligence
+
+## Project Overview
+Recruitica is a modern recruitment management platform built for Nikola, a Partner at Recruitica. The system streamlines candidate submission and client management with AI-powered email generation and tuning capabilities.
+
+## Tech Stack Intelligence
+- **Frontend**: React 18 + TypeScript + Vite + TailwindCSS + shadcn/ui
+- **Backend**: Supabase (Auth, Database, Edge Functions)
+- **AI**: OpenRouter API with multiple models (GPT-4, Claude, Llama, Mistral)
+- **External**: n8n workflows for email processing
+- **Deployment**: Lovable platform
+
+## Critical Implementation Paths
+
+### Authentication Flow
+- Uses Supabase Auth with email/password + Google OAuth
+- AuthContext provides global auth state management
+- Automatic redirects on auth state changes
+- User-scoped data access throughout the application
+
+### AI Email Generation Workflow
+1. Candidate submission → Client selection → Email generation (n8n webhook)
+2. AI tuning with multiple models via OpenRouter API
+3. Interactive chat interface for email refinement
+4. Finalization and webhook delivery
+
+### Component Architecture Patterns
+- **Naming**: kebab-case for component names (e.g., `candidate-form.tsx`)
+- **Organization**: Feature-based folders with shared UI components
+- **Server Components**: Prefer React Server Components where possible
+- **Client Components**: Minimize 'use client' to small, isolated components
+
+### Database Schema
+- **candidates**: Stores candidate info and client associations
+- **clients**: Company contact information
+- **client_lists**: Organized groups of clients
+- **client_list_entries**: Many-to-many relationship between clients and lists
+- All data scoped to authenticated user
+
+## Key Patterns Discovered
+
+### State Management
+- **Global State**: AuthContext for authentication
+- **Server State**: TanStack Query for API data caching
+- **Local State**: useState for component-specific state
+- **Form State**: React Hook Form with Zod validation
+
+### Error Handling
+- Comprehensive error boundaries throughout the app
+- Graceful fallbacks for AI service failures
+- User-friendly error messages with toast notifications
+- Loading states for all async operations
+
+### AI Integration Patterns
+- OpenRouter API with fallback to static model list
+- Custom system prompts tuned to Nikola's communication style
+- HTML email processing with formatting preservation
+- Interactive chat interface for iterative improvements
+
+## User Preferences & Workflow
+- **Communication Style**: Nikola prefers witty, minimalist, Gen Z vibes
+- **AI Tuning**: Focus on professional wit, strong hooks, short punchy content
+- **UI/UX**: Dark/light theme support, responsive design, accessibility compliance
+- **Error Handling**: Graceful degradation with helpful user feedback
+
+## Known Challenges
+- Some code duplication in component structure
+- Inconsistent error handling approaches across components
+- Some components lack proper loading indicators
+- Type safety could be stricter in some areas
+
+## Evolution of Project Decisions
+- Started with basic React setup, evolved to include AI integration
+- Added Supabase for backend services and authentication
+- Integrated OpenRouter for multiple AI model support
+- Implemented n8n workflows for external email processing
+- Added comprehensive error handling and loading states
+
+## Tool Usage Patterns
+- **Component Creation**: Use kebab-case naming, feature-based organization
+- **Form Handling**: React Hook Form + Zod validation
+- **API Integration**: TanStack Query for caching and synchronization
+- **Styling**: TailwindCSS with shadcn/ui components
+- **Type Safety**: Strict TypeScript throughout the application

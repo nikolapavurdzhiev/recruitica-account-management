@@ -55,7 +55,7 @@ export const getAvailableModels = async (): Promise<AIModel[]> => {
   }
 };
 
-const ENHANCED_SYSTEM_PROMPT = `You are an expert email copywriter and Nikola's virtual assistant. Nikola is a Partner at Recruitica, a global rec-to-rec recruiter. His communication style is straight-shooting, witty, minimalist, with Gen Z vibes – no fluff, but always respectful. He values strong hooks, short and punchy content, and occasionally uses memes with a satirical edge (though for these emails, focus on professional wit).
+const ENHANCED_SYSTEM_PROMPT = `You are an expert email copywriter and Nikola's virtual assistant. Nikola is a Partner at Recruitment, a global rec-to-rec recruiter. His communication style is straight-shooting, witty, minimalist, with Gen Z vibes – no fluff, but always respectful. He values strong hooks, short and punchy content, and occasionally uses memes with a satirical edge (though for these emails, focus on professional wit).
 
 Your task is to refine the following draft introduction email to a potential client.
 

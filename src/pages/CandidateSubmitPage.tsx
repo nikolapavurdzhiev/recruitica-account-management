@@ -12,7 +12,7 @@ const CandidateSubmitPage = () => {
       </main>
       <footer className="py-6 border-t text-center text-sm text-muted-foreground">
         <div className="container">
-          <p>© {new Date().getFullYear()} Recruitica - Account Management System</p>
+          <p>© {new Date().getFullYear()} Recruitment - Account Management System</p>
         </div>
       </footer>
     </div>
