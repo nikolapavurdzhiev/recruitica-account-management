@@ -3,8 +3,6 @@
 
 A modern, AI-powered recruitment management platform built with React, TypeScript, and Supabase. Streamlines candidate submission, client management, and email outreach with intelligent automation.
 
-![Recruitment](https://i.ibb.co/xS4qLNK9/780x184.png)
-
 ## 🚀 Features
 
 - **Authentication System**
