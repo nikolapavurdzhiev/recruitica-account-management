@@ -15,7 +15,10 @@ export interface AIModel {
   label: string;
   description?: string;
   contextLength?: number;
-  pricing?: any;
+  pricing?: {
+    prompt?: string;
+    completion?: string;
+  };
 }
 
 export const AI_MODELS = [
@@ -48,7 +51,7 @@ export const getAvailableModels = async (): Promise<AIModel[]> => {
       console.log("No models returned from API, falling back to static list");
       return AI_MODELS;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch models:", error);
     console.log("Falling back to static model list");
     return AI_MODELS;
@@ -121,7 +124,7 @@ export const tuneEmail = async ({ model, emailBody }: TuningOptions): Promise<st
     }
 
     return data.choices[0].message.content;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to tune email:", error);
     throw error;
   }

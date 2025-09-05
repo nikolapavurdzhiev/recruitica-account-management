@@ -15,25 +15,16 @@ export const useWebhookMutation = () => {
       console.log("Webhook mutation succeeded with response:", data);
     },
     onError: (error: Error) => {
-      // Check if this is a timeout error
-      const isTimeoutError = error.message.includes('timed out');
-      
       console.error("Webhook mutation failed:", error);
       
       toast.error(
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            {isTimeoutError ? <Clock className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-            <span className="font-bold">
-              {isTimeoutError ? "Webhook request timed out" : "Webhook request failed"}
-            </span>
+            <AlertCircle className="h-4 w-4" />
+            <span className="font-bold">Email generation failed</span>
           </div>
           <div className="text-sm text-muted-foreground">{error.message}</div>
-          <div className="text-sm">
-            {isTimeoutError 
-              ? "n8n workflow may still be processing. Please check your email in a few minutes or try again." 
-              : "You can try again when ready."}
-          </div>
+          <div className="text-sm">You can try again when ready.</div>
         </div>
       );
     }

@@ -1,5 +1,14 @@
 
+// @deno-types="https://deno.land/std@0.168.0/http/server.ts"
+// @ts-expect-error - Deno runtime module, not available in Node.js TypeScript
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+// Type declarations for Deno runtime
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,36 +52,37 @@ serve(async (req) => {
     
     // Filter and format models for text generation (exclude image/embedding models)
     const textModels = data.data
-      ?.filter((model: any) => 
+      ?.filter((model: Record<string, unknown>) => 
         model.id && 
         model.name && 
-        !model.id.includes('embedding') &&
-        !model.id.includes('whisper') &&
-        !model.id.includes('dall-e') &&
-        !model.id.includes('tts') &&
-        model.context_length > 1000 // Ensure reasonable context length
+        !String(model.id).includes('embedding') &&
+        !String(model.id).includes('whisper') &&
+        !String(model.id).includes('dall-e') &&
+        !String(model.id).includes('tts') &&
+        Number(model.context_length) > 1000 // Ensure reasonable context length
       )
-      ?.map((model: any) => ({
-        value: model.id,
-        label: model.name,
-        description: model.description || '',
-        contextLength: model.context_length,
-        pricing: model.pricing
+      ?.map((model: Record<string, unknown>) => ({
+        value: String(model.id),
+        label: String(model.name),
+        description: String(model.description || ''),
+        contextLength: Number(model.context_length),
+        pricing: model.pricing as { prompt?: string; completion?: string }
       }))
-      ?.sort((a: any, b: any) => a.label.localeCompare(b.label)) || []
+      ?.sort((a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label)) || []
 
     console.log(`Returning ${textModels.length} filtered text generation models`)
     
     return new Response(JSON.stringify({ models: textModels }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in get-openrouter-models function:', error)
     
     // Return error response
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return new Response(
       JSON.stringify({
-        error: error.message || 'An unexpected error occurred',
+        error: errorMessage,
         models: [] // Fallback to empty array
       }),
       {
