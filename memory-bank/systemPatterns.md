@@ -62,7 +62,7 @@
 
 ### External Service Integration
 - **OpenRouter API**: AI model access with fallback mechanisms
-- **n8n Workflows**: Webhook-based email processing
+- **Mock Webhook System**: Portfolio-friendly email generation simulation
 - **Error Handling**: Graceful degradation and user feedback
 
 ## Security Patterns

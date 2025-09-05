@@ -1,7 +1,7 @@
 
-# Recruitment - Candidate Management System
+# Recruitment Candidate Management System
 
-A modern, AI-powered recruitment management platform built with React, TypeScript, and Supabase. Streamlines candidate submission, client management, and email outreach with intelligent automation.
+A modern, AI-powered recruitment management platform built with React, TypeScript, and Supabase. Streamlines candidate submission, client management, and email outreach with intelligent automation
 
 ## 🚀 Features
 
@@ -46,7 +46,7 @@ A modern, AI-powered recruitment management platform built with React, TypeScrip
 ### Backend & Services
 - **Supabase** (PostgreSQL database, authentication, edge functions)
 - **OpenRouter API** for AI model access (GPT-4, Claude, Llama, Mistral)
-- **n8n** workflow automation for email processing
+- **Mock Webhook System** for portfolio demonstration
 - **Edge Functions** (Deno runtime) for serverless AI processing
 
 ### State Management & Data

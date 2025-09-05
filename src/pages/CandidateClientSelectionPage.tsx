@@ -97,13 +97,13 @@ const CandidateClientSelectionPage = () => {
         });
       },
       onError: (error: any) => {
-        console.error("Webhook error:", error);
+        console.error("Email generation error:", error);
         
         toast.error(
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" /> 
-              Webhook request failed
+              Email generation failed
             </div>
             <div className="text-sm text-muted-foreground">{error.message}</div>
             <div className="text-sm">You can try again when ready.</div>

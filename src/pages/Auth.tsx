@@ -35,8 +35,9 @@ const Auth = () => {
         if (error) throw error;
         toast.success("Registration successful! Please check your email for confirmation.");
       }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred during authentication");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred during authentication";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

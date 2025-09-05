@@ -1,7 +1,7 @@
-# Recruitica Account Management System - Project Intelligence
+# Recruitment Account Management System - Project Intelligence
 
 ## Project Overview
-Recruitica is a modern recruitment management platform built for Nikola, a Partner at Recruitica. The system streamlines candidate submission and client management with AI-powered email generation and tuning capabilities.
+The system streamlines candidate submission and client management with AI-powered email generation and tuning capabilities.
 
 ## Tech Stack Intelligence
 - **Frontend**: React 18 + TypeScript + Vite + TailwindCSS + shadcn/ui

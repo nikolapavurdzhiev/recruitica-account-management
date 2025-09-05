@@ -1,11 +1,11 @@
 # Project Brief - Recruitment Account Management System
 
 ## Project Overview
-Recruitment is a modern recruitment management platform designed specifically for Nikola, a Partner at Recruitment (a global rec-to-rec recruiter). The system streamlines the candidate submission and client management workflow with AI-powered email generation and tuning capabilities.
+The system streamlines the candidate submission and client management workflow with AI-powered email generation and tuning capabilities.
 
 ## Core Purpose
 - **Primary Goal**: Streamline the recruitment process from candidate submission to client outreach
-- **Target User**: Nikola (Partner at Recruitment) and other recruitment professionals
+- **Target User**: Recruitment professionals
 - **Business Value**: Automate and enhance the candidate-to-client introduction process
 
 ## Key Requirements
@@ -36,7 +36,7 @@ Recruitment is a modern recruitment management platform designed specifically fo
 - **Frontend**: React 18, TypeScript, Vite, TailwindCSS, shadcn/ui
 - **Backend**: Supabase (Auth, Database, Edge Functions)
 - **AI Integration**: OpenRouter API for multiple AI models
-- **External Services**: n8n workflows for email processing
+- **External Services**: Mock webhook system for portfolio demonstration
 - **Deployment**: Lovable platform integration
 
 ## Success Criteria

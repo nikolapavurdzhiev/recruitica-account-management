@@ -21,11 +21,12 @@
 - **Client Table**: Organized display with actions and management
 
 ### ✅ AI-Powered Email Generation
-- **Email Generation**: AI-powered email creation via n8n webhook
+- **Email Generation**: AI-powered email creation with mock webhook system
 - **Multiple AI Models**: Support for GPT-4, Claude, Llama, Mistral
 - **Interactive Tuning**: Real-time email refinement with AI
 - **Chat Interface**: Conversational email improvement
 - **Model Selection**: Dynamic AI model selection from OpenRouter
+- **Portfolio Mode**: Mock webhook system for demonstration purposes
 
 ### ✅ User Interface
 - **Responsive Design**: Mobile-first responsive design

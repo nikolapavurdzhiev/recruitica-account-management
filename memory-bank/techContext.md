@@ -20,7 +20,7 @@
   - Edge Functions (Deno runtime)
   - Real-time subscriptions
 - **OpenRouter API**: AI model access and management
-- **n8n**: Workflow automation for email processing
+- **Mock Webhook System**: Portfolio-friendly email generation simulation
 
 ### Development Tools
 - **ESLint**: Code linting and quality assurance

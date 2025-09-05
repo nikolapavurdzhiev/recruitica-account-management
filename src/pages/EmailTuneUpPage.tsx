@@ -126,16 +126,16 @@ const EmailTuneUpPage = () => {
       toast.success("Email finalized and sent successfully!");
       navigate('/candidate/submit');
     } catch (error: any) {
-      console.error("Finalized email webhook error:", error);
+      console.error("Email finalization error:", error);
       toast.error(
         <div className="flex flex-col gap-2">
-          <div>Failed to send finalized email</div>
+          <div>Failed to finalize email</div>
           <div className="text-sm text-muted-foreground">{error.message}</div>
           <div className="text-sm">You can still continue to the next step.</div>
         </div>
       );
       
-      // Allow user to continue even if webhook fails
+      // Allow user to continue even if finalization fails
       setTimeout(() => {
         navigate('/candidate/submit');
       }, 3000);
