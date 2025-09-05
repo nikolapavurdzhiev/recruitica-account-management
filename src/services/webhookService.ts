@@ -60,7 +60,7 @@ const generateMockEmailHTML = (candidateName: string, contacts: WebhookContact[]
     <p>Would you be interested in a quick 15-minute call to discuss how ${candidateName} could contribute to your team? I can arrange something that works with your schedule.</p>
     
     <div style="text-align: center;">
-      <a href="mailto:nikola@recruitica.com?subject=Interested in ${candidateName}&body=Hi Nikola, I'd like to learn more about ${candidateName}. When works for a call?" class="cta-button">
+      <a href="mailto:nikola@npav.dev?subject=Interested in ${candidateName}&body=Hi Nikola, I'd like to learn more about ${candidateName}. When works for a call?" class="cta-button">
         Let's Talk About ${candidateName}
       </a>
     </div>
@@ -70,8 +70,8 @@ const generateMockEmailHTML = (candidateName: string, contacts: WebhookContact[]
     <div class="signature">
       <p>Best,<br>
       Nikola<br>
-      Partner, Recruitica<br>
-      📧 nikola@recruitica.com<br>
+      Recruitment Platform<br>
+      📧 nikola@npav.dev<br>
       📱 +1 (555) 123-4567</p>
     </div>
   </div>

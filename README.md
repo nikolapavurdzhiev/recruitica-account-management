@@ -176,16 +176,18 @@ The application supports both dark and light themes with a comprehensive design 
 
 ## 🚀 Deployment
 
-### Deploy to Lovable
-1. Click the "Publish" button in the Lovable editor
-2. Your app will be deployed to a Lovable subdomain
+### Live Application
+The application is currently deployed and accessible at:
+**🌐 [https://recruitment.npav.dev/](https://recruitment.npav.dev/)**
 
-### Custom Domain
-1. Navigate to Project > Settings > Domains in Lovable
-2. Connect your custom domain (requires paid plan)
+### Deployment Details
+- **Platform**: Vercel
+- **Domain**: recruitment.npav.dev
+- **Custom Domain**: Configured with automatic SSL
+- **Build**: Automated from GitHub repository
 
 ### Self-Hosting
-After connecting to GitHub, you can deploy the app anywhere:
+To deploy the app elsewhere:
 
 1. **Build the project**
    ```bash
@@ -301,5 +303,7 @@ This project is private and proprietary. All rights reserved.
   - Comprehensive error handling
 
 ---
+
+🌐 **Live Demo**: [https://recruitment.npav.dev/](https://recruitment.npav.dev/)
 
 Built with ❤️ using [Lovable](https://lovable.dev)
